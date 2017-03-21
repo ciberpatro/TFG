@@ -14,15 +14,15 @@ public class Value {
 	}
 
 	public Boolean asBoolean() {
-		return (Boolean) getObject();
+		return (Boolean) value;
 	}
 
 	public Integer asInteger() {
-		return (Integer) getObject();
+		return (Integer) value;
 	}
 
 	public Double asDouble() {
-		return (Double) getObject();
+		return (Double) value;
 	}
 
 	public String asString() {
@@ -37,19 +37,23 @@ public class Value {
 	}
 
 	public boolean isString() {
-		return getObject() instanceof String;
+		return value instanceof String;
+	}
+
+	public boolean isBoolean(){
+		return value instanceof Boolean;
 	}
 
 	public boolean isNumber() {
-		return getObject() instanceof Number;
+		return value instanceof Number;
 	}
 
 	public boolean isDouble() {
-		return getObject() instanceof Double;
+		return value instanceof Double;
 	}
 
 	public boolean isInteger() {
-		return getObject() instanceof Integer;
+		return value instanceof Integer;
 	}
 	public boolean isList(){
 		return getObject() instanceof ArrayList;

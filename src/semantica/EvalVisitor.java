@@ -180,23 +180,25 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 	}
 	/*If statement*/
 	public Value visitIfStatement(tfgParser.IfStatementContext ctx) {
-		boolean condition=(this.visit(ctx.condition)).asBoolean();
-		if (condition){
-			this.visit(ctx.exprIf);
-		}else if (ctx.exprElseIf != null){
-			List<tfgParser.ElseIf_statementContext> elseif=ctx.elseIf_statement();
-			int index=0;
-			for (int i=0;i<elseif.size()&&!condition;i++) 
-				condition=(this.visit(elseif.get(index))).asBoolean();
-		}
-		if (!condition&&ctx.exprElse != null) this.visit(ctx.exprElse);
+		Value condition=this.visit(ctx.condition);
+		if (condition.isBoolean()){
+			if (condition.asBoolean()){
+				this.visit(ctx.exprIf);
+			}else if (ctx.exprElseIf != null){
+				List<tfgParser.ElseIf_statementContext> elseif=ctx.elseIf_statement();
+				for (int i=0;i<elseif.size()&&!condition.asBoolean();i++) 
+					condition=this.visit(elseif.get(i));
+			}
+			if (!condition.asBoolean()&&ctx.exprElse != null) this.visit(ctx.exprElse);
+		}else{/*ERROR NO BOOLEAN EXPRESION TO-DO*/}
 		return Value.VOID;
 	}
 	/*ElseIf statement*/
 	public Value visitElseIfStatement(tfgParser.ElseIfStatementContext ctx) {
-	    boolean condition=(this.visit(ctx.condition)).asBoolean();
-		Value ret=new Value(condition);
-		if (condition) this.visit(ctx.expr);
-		return ret; 
+		Value condition=this.visit(ctx.condition);
+		if (condition.isBoolean()){
+			if (condition.asBoolean()) this.visit(ctx.expr);
+		}else{/*ERROR NO BOOLEAN EXPRESION TO-DO*/}
+		return condition; 
 	}	
 }

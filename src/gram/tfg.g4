@@ -26,9 +26,11 @@ function_call : PRINT PARENTESISABIERTO rvalue PARENTESISCERRADO # function_call
 function_call_param_list: (rvalue COMA)* rvalue;
 
  
-if_statement: IF boolean_condition CRLF expression_list (ELSE IF boolean_condition CRLF expression_list)* (ELSE CRLF expression_list)? END;
+if_statement: IF PARENTESISABIERTO condition=rvalue PARENTESISCERRADO CRLF exprIf=expression_list exprElseIf=elseIf_statement* exprElse=else_statement? END #ifStatement;
 
-boolean_condition: PARENTESISABIERTO rvalue PARENTESISCERRADO;
+elseIf_statement: ELSE IF PARENTESISABIERTO condition=rvalue PARENTESISCERRADO CRLF expr=expression_list #elseIfStatement;
+
+else_statement:ELSE CRLF expr=expression_list #elseStatement;
 
 
 assigment: l=lvalue op=(IGUAL | MASIGUAL | MENOSIGUAL | MULTIGUAL | DIVISIONIGUAL | PORCENTAJEIGUAL | ELEVADOIGUAL) r=rvalue;

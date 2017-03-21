@@ -175,7 +175,28 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 			variableStack.push(localVar);//Variables locales EN la pila
 			ret = this.visit(func.function_definition_body());
 			variableStack.pop();//Quitamos la pila una vez acabada la funcion
-		}else{/*ESTO PARECIA UN ERROR PERO NO ES ASI FUCK*/}
+		}else{/*TO-DO Comprobar si cumple con los mismos parámetros que la función*/}
 		return ret;
 	}
+	/*If statement*/
+	public Value visitIfStatement(tfgParser.IfStatementContext ctx) {
+		boolean condition=(this.visit(ctx.condition)).asBoolean();
+		if (condition){
+			this.visit(ctx.exprIf);
+		}else if (ctx.exprElseIf != null){
+			List<tfgParser.ElseIf_statementContext> elseif=ctx.elseIf_statement();
+			int index=0;
+			for (int i=0;i<elseif.size()&&!condition;i++) 
+				condition=(this.visit(elseif.get(index))).asBoolean();
+		}
+		if (!condition&&ctx.exprElse != null) this.visit(ctx.exprElse);
+		return Value.VOID;
+	}
+	/*ElseIf statement*/
+	public Value visitElseIfStatement(tfgParser.ElseIfStatementContext ctx) {
+	    boolean condition=(this.visit(ctx.condition)).asBoolean();
+		Value ret=new Value(condition);
+		if (condition) this.visit(ctx.expr);
+		return ret; 
+	}	
 }

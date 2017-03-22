@@ -4,13 +4,14 @@ public class Value {
 
 	public static Value VOID = new Value(new Object());
 
-	final Object value;
+	private final Object value;
 
 	public Value(Object value) {
 		this.value = value;
 	}
-	private Object getObject(){
-		return (value instanceof Value) ? ((Value) value).getObject() : value;
+
+	private Object getValue(){
+		return value;
 	}
 
 	public Boolean asBoolean() {
@@ -22,7 +23,7 @@ public class Value {
 	}
 
 	public Double asDouble() {
-		return (Double) value;
+		return Double.valueOf(value.toString());
 	}
 
 	public String asString() {
@@ -30,7 +31,7 @@ public class Value {
 	}
 
 	public ArrayList<Value> asList(){
-		return (ArrayList<Value>) getObject();
+		return (ArrayList<Value>) value;
 	}
 	public String getValClass(){
 		return value.getClass().toString();
@@ -56,7 +57,7 @@ public class Value {
 		return value instanceof Integer;
 	}
 	public boolean isList(){
-		return getObject() instanceof ArrayList;
+		return value instanceof ArrayList || value instanceof Value;
 	}
 
 	public int hashCode() {
@@ -67,20 +68,15 @@ public class Value {
 
 		return this.value.hashCode();
 	}
-
-	public boolean equals(Object o) {
-
-		if(value == o) {
-			return true;
+	public boolean equals(Object a) {
+		Value o = (Value) a;
+		boolean eq=false;
+		if(value.equals(o.getValue())) {
+			eq = true;
+		}else if(value == null || o == null || o.getValue().getClass() != value.getClass()) {
+			eq = false;
 		}
-
-		if(value == null || o == null || o.getClass() != value.getClass()) {
-			return false;
-		}
-
-		Value that = (Value)o;
-
-		return this.value.equals(that.value);
+		return eq;
 	}
 
 	public String toString() {

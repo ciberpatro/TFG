@@ -48,24 +48,24 @@ lvalue: IDENTIFICADOR  	#lvaluelocal
  
 rvalue: 
 	lvalue	#rvalueLvalue
+	|PARENTESISABIERTO val=rvalue PARENTESISCERRADO	#rvalueParenthesis
 	|CADENA	#rvalueCadena
 	|BOOLEAN	#rvalueBoolean
 	|FLOAT	#rvalueFloat
 	|ENTERO	#rvalueEntero
 	|NULO	#rvalueNull
+	|matrix=rvalue CORCHETEABIERTO index=rvalue CORCHETECERRADO	#rvalueArraySelection
 	|array_definition	#rvalueArrayDefinition
 	|array_assigment	#rvalueregla8
 	|assigment	#rvalueregla9
 	|function_call	#rvalueFunction_call
-	|r=rvalue op=ELEVADO r1=rvalue	#rvalueop0
-	|r=rvalue op=(MULT | DIVISION | PORCENTAJE) r1=rvalue	#rvalueop1
+	|r=rvalue op=ELEVADO r1=rvalue	#rvalueOp0
+	|r=rvalue op=(MULT | DIVISION | PORCENTAJE) r1=rvalue	#rvalueOp1
 	|r=rvalue op=(SUMA | RESTA) r1=rvalue	#rvalueop2
-	|COMPARADORBOL2 r=rvalue	#rvalueregla12
-	|r=rvalue COMPARADORBOL1 r1=rvalue	#rvalueregla13
-	|(ENTERO | FLOAT | CADENA | lvalue) (COMPARADORES2| COMPARADORES1) (ENTERO | FLOAT | CADENA | lvalue) 		#rvalueregla15
-	|(array_definition | BOOLEAN | NULO | lvalue) COMPARADORES1 (array_definition | BOOLEAN | NULO | lvalue) 	#rvalueregla16
-	|PARENTESISABIERTO rvalue PARENTESISCERRADO 			 													#rvalueregla17
-	|matrix=rvalue CORCHETEABIERTO index=rvalue CORCHETECERRADO #rvalueArraySelection
+	|op=COMPARADORBOL2 r=rvalue	#rvalueBoolean2
+	|r=rvalue op=COMPARADORBOL1 r1=rvalue	#rvalueBoolean1
+	|r=rvalue op=COMPARADORES1 r1=rvalue	#rvalueComp1
+	|r=rvalue op=COMPARADORES2 r1=rvalue	#rvalueComp2
 	;
 
 PRINT : 'print';
@@ -104,8 +104,8 @@ MULTIGUAL: '*=';
 DIVISIONIGUAL: '/=';
 PORCENTAJEIGUAL: '%=';
 ELEVADOIGUAL: '**=';
-COMPARADORBOL1 : 'and' | '&&' | 'or' ;
-COMPARADORBOL2 : 'not' | '!' | '~';
+COMPARADORBOL1 : 'and' | '&&' | 'or' | '||';
+COMPARADORBOL2 : 'not' | '!';
 PARENTESISABIERTO : '(';
 PARENTESISCERRADO : ')';
 CORCHETEABIERTO : '[';

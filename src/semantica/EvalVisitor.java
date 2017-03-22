@@ -48,8 +48,12 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		Map<String, Value> variables = variableStack.peek();
 		return variables.get(id); 
 	}
+	/*Rvalue Parenthesis*/
+	public Value visitRvalueParenthesis(tfgParser.RvalueParenthesisContext ctx) {
+	   	return this.visit(ctx.val); 
+	}
 	/*Rvalue operations*/
-	public Value visitRvalueop1(tfgParser.Rvalueop1Context ctx) {
+	public Value visitRvalueOp1(tfgParser.RvalueOp1Context ctx) {
 		Value r = this.visit(ctx.r);
 		Value r1 = this.visit(ctx.r1);
 		String op = ctx.op.getText();
@@ -61,6 +65,41 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		Value r1 = this.visit(ctx.r1);
 		String op = ctx.op.getText();
 		return doOperations(r,r1,op);
+	}
+
+	public Value visitRvalueBoolean2(tfgParser.RvalueBoolean2Context ctx) {
+	   	Value r = this.visit(ctx.r);
+		String op = ctx.op.getText();
+		Boolean result=false;
+		if (r.isBoolean()){
+			switch(op){
+				case "!":
+				case "not":
+					result=!r.asBoolean();
+				break;
+			}
+		}else{/*ERROR THE VALUE ISN'T BOOLEAN TO-DO*/}
+		return new Value(result); 
+	}
+
+	public Value visitRvalueBoolean1(tfgParser.RvalueBoolean1Context ctx) {
+	   	Value r = this.visit(ctx.r);
+		Value r1 =this.visit(ctx.r1);
+		String op=ctx.op.getText();
+		Boolean result=false;
+		if (r.isBoolean()&&r1.isBoolean()){
+			switch (op){
+				case "and":
+				case "&&":
+					result=r.asBoolean()&&r1.asBoolean();
+				break;
+				case "or":
+				case "||":
+					result=r.asBoolean()||r1.asBoolean();
+				break;
+			}
+		}else{/*ERROR ONE OR MORE OF THE VALUES AREN'T BOOLEANS TO-DO*/}
+		return new Value(result);
 	}
 	
 	public Value doOperations(Value r, Value r1, String op){
@@ -85,7 +124,48 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		}
 		return result;
 	}
-	
+
+	public Value visitRvalueComp2(tfgParser.RvalueComp2Context ctx) {
+	   	Value r=this.visit(ctx.r);
+		Value r1=this.visit(ctx.r1);
+		String op=ctx.op.getText();
+		Value result=Value.VOID;
+		if (r.isNumber()&&r1.isNumber()){
+			switch (op){
+				case ">":
+					result=new Value(r.asDouble()>r1.asDouble());
+				break;
+				case ">=":
+					result=new Value(r.asDouble()>=r1.asDouble());
+				break;
+				case "<":
+					result=new Value(r.asDouble()<r1.asDouble());
+				break;
+				case "<=":
+					result=new Value(r.asDouble()<=r1.asDouble());
+				break;
+			}
+		}else{/*THE BOTH VALUES MUST BE NUMBERS TO-DO*/}
+		return result;
+	}
+
+	public Value visitRvalueComp1(tfgParser.RvalueComp1Context ctx) {
+		Value r=this.visit(ctx.r);
+		Value r1=this.visit(ctx.r1);
+		String op=ctx.op.getText();
+		Value result=Value.VOID;
+		System.out.println(r1.getClass());
+		switch (op){
+			case "==":
+				result=new Value(r.equals(r1));
+			break;
+			case "!=":
+				result=new Value(!r.equals(r1));
+			break;
+		}
+		return result;
+	}
+
 	/*Semantica Funciones*/
 	/*Definicion Funcion*/
 	public Value visitFunction_definition(tfgParser.Function_definitionContext ctx) {
@@ -142,7 +222,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 			matrix=vmatrix.asList();
 			index=vindex.asInteger();
 			if (index<matrix.size())
-				vfinal=new Value(matrix.get(index));
+				vfinal=matrix.get(index);
 			else
 				System.out.println("Index Error");
 		}else

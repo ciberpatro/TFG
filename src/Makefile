@@ -1,10 +1,12 @@
 .PHONY: test
 
+ANTLR_LIB=../lib/antlr-4.7-complete.jar
+
 all:
-	java -cp ../lib/antlr-4.6-complete.jar org.antlr.v4.Tool -package gram ./gram/tfg.g4 -visitor 
+	java -cp $(ANTLR_LIB) org.antlr.v4.Tool -package gram ./gram/tfg.g4 -visitor 
 build:
-	javac -cp ../lib/antlr-4.6-complete.jar gram/*.java semantica/*.java Main.java -d ../bin/ -Xlint:deprecation
+	javac -cp $(ANTLR_LIB) gram/*.java semantica/*.java Main.java -d ../bin/ -Xlint:deprecation
 test:
-	java -cp ../lib/antlr-4.6-complete.jar:../bin/ Main ../test/asdf
+	java -cp $(ANTLR_LIB):../bin/ Main ../test/test
 clean:
-	rm ../bin/*.class ./gram/*.java ./gram/*.tokens
+	find ../bin/ ./gram/ -type f \( -name \*.class -o -name \*.java -o -name \*.tokens \) -delete

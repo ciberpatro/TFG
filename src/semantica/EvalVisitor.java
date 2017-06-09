@@ -10,8 +10,14 @@ import gram.*;
 import org.antlr.v4.runtime.tree.*;
 
 public class EvalVisitor extends tfgBaseVisitor<Value> {
-	private Map<String,tfgParser.Function_definitionContext> functions = new HashMap<String,tfgParser.Function_definitionContext>(); 
-	private Stack<Map<String, Value>> variableStack = new Stack<Map<String, Value>>(){{push(new HashMap<String, Value>());}};
+	private Map<String,tfgParser.Function_definitionContext> functions;
+	private Stack<Map<String, Value>> variableStack; 
+	
+	public EvalVisitor(){
+		functions = new HashMap<String,tfgParser.Function_definitionContext>(); 
+		variableStack = new Stack<Map<String, Value>>();
+		variableStack.push(new HashMap<String, Value>());
+	}
 
 	public Value visitAssigment(tfgParser.AssigmentContext ctx) {
 		String id = this.visit(ctx.lvalue()).asString();
@@ -46,7 +52,11 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 	public Value visitRvalueLvalue(tfgParser.RvalueLvalueContext ctx) {
 		String id = this.visit(ctx.lvalue()).asString();
 		Map<String, Value> variables = variableStack.peek();
-		return variables.get(id); 
+		Value value = variables.get(id);
+		if (value==null){
+			//ERROR VARIABLE NOT INITIALIZED TO-DO
+		}
+		return value;
 	}
 	/*Rvalue Parenthesis*/
 	public Value visitRvalueParenthesis(tfgParser.RvalueParenthesisContext ctx) {
@@ -121,6 +131,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 					result=new Value(r.asDouble()*r1.asDouble());
 				}
 			break;
+			/*ADD MORE OPERATORS TO-DO*/
 		}
 		return result;
 	}
@@ -178,11 +189,21 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 	public Value visitFunction_definition_header(tfgParser.Function_definition_headerContext ctx) {
 		return new Value(ctx.id.getText());
 	}
-	
+	/*Print function*/
 	public Value visitFunction_call_print(tfgParser.Function_call_printContext ctx) {
 		System.out.println(this.visit(ctx.rvalue()));
 		return Value.VOID;
 	}
+	/*Size function*/
+	public Value visitFunction_call_size(tfgParser.Function_call_sizeContext ctx) {
+		Value rvalue = this.visit(ctx.rvalue());
+		int size=-1;
+		if (rvalue.isList()){
+			size=rvalue.asList().size();
+		}
+		return new Value(size);
+	}
+
 	/*Arrays*/
 	public Value visitArray_definition(tfgParser.Array_definitionContext ctx) {
 		Value v=Value.VOID;
@@ -228,6 +249,19 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		}else
 			System.out.println("Object: "+ vmatrix.getValClass() +" is not iterable" );	
 		return vfinal; 
+	}
+
+	public Value visitRvalueArrayDefRange(tfgParser.RvalueArrayDefRangeContext ctx) {
+		Value from = this.visit(ctx.from);
+		Value to = this.visit(ctx.to);
+		ArrayList<Value> aux=new ArrayList<Value>();
+		Value list=new Value(aux);
+		if (from.isInteger() && to.isInteger()){
+			for (int i=from.asInteger();i<to.asInteger();i++){
+				aux.add(new Value(i));
+			}	
+		}
+		return list;
 	}
 	
 	/*Llamada Funcion*/
@@ -280,5 +314,31 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 			if (condition.asBoolean()) this.visit(ctx.expr);
 		}else{/*ERROR NO BOOLEAN EXPRESION TO-DO*/}
 		return condition; 
-	}	
+	}
+	/*For statement*/
+	public Value visitForInStatement(tfgParser.ForInStatementContext ctx) {
+		String id = this.visit(ctx.element).asString();
+		Map<String, Value> variables = variableStack.peek();
+		Value iter = this.visit(ctx.iterator);
+		if (iter.isList()){
+			for (int i=0;i<iter.asList().size();i++){
+				variables.put(id, iter.asList().get(i));
+				this.visit(ctx.exprFor);
+			}
+		}else{
+			//NO ITERATOR ERROR TO-DO
+		}
+		return Value.VOID;
+	}
+	/*While statement*/
+	public Value visitWhileStatement(tfgParser.WhileStatementContext ctx) {
+		Value condition = this.visit(ctx.condition);
+		if (condition.isBoolean()){
+			while (condition.asBoolean()){
+				this.visit(ctx.exprWhile);
+				condition = this.visit(ctx.condition);
+			}
+		}
+		return Value.VOID;
+	}
 }

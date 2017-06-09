@@ -7,6 +7,8 @@ expression_list : (expression CRLF+)*;
 expression : function_definition # expression_function_definition
 			|if_statement # expression_if_statement
 			|rvalue # expression_rvalue
+			|for_statement # expression_for
+			|while_statement # expression_while
 			;
 
 function_definition: header=function_definition_header body=function_definition_body END;
@@ -20,6 +22,7 @@ function_definition_body : expression_list return_statement?;
 return_statement: RETURN rvalue CRLF;
  
 function_call : PRINT PARENTESISABIERTO rvalue PARENTESISCERRADO # function_call_print
+			  | SIZE PARENTESISABIERTO rvalue PARENTESISCERRADO # function_call_size
 			  | id=IDENTIFICADOR PARENTESISABIERTO param=function_call_param_list? PARENTESISCERRADO # function_call_id
 			  ;
 
@@ -32,12 +35,15 @@ elseIf_statement: ELSE IF PARENTESISABIERTO condition=rvalue PARENTESISCERRADO C
 
 else_statement:ELSE CRLF expr=expression_list #elseStatement;
 
+for_statement : FOR element=lvalue IN iterator=rvalue CRLF exprFor=expression_list END #forInStatement
+			  ;
+
+while_statement : WHILE PARENTESISABIERTO condition=rvalue PARENTESISCERRADO CRLF exprWhile=expression_list END #whileStatement;
 
 assigment: l=lvalue op=(IGUAL | MASIGUAL | MENOSIGUAL | MULTIGUAL | DIVISIONIGUAL | PORCENTAJEIGUAL | ELEVADOIGUAL) r=rvalue;
 
 array_assigment: l=lvalue  op=(IGUAL | MASIGUAL | MENOSIGUAL)  a=array_definition;
 
- 
 array_definition: CORCHETEABIERTO eleArray=array_definition_elements? CORCHETECERRADO;
 
 array_definition_elements: (rvalue COMA)* rvalue;
@@ -55,6 +61,7 @@ rvalue:
 	|ENTERO	#rvalueEntero
 	|NULO	#rvalueNull
 	|matrix=rvalue CORCHETEABIERTO index=rvalue CORCHETECERRADO	#rvalueArraySelection
+	|from=rvalue RANGO to=rvalue #rvalueArrayDefRange
 	|array_definition	#rvalueArrayDefinition
 	|array_assigment	#rvalueregla8
 	|assigment	#rvalueregla9
@@ -69,6 +76,7 @@ rvalue:
 	;
 
 PRINT : 'print';
+SIZE : 'size';
 REQUIRE : 'require';
 END : 'end';
 DEF : 'function';
@@ -88,6 +96,7 @@ RETRY : 'retry';
 BREAK : 'break';
 FOR : 'for';
 IN : 'in';
+TO : 'to';
 BOOLEAN : 'true' | 'false';
 SUMA: '+';
 RESTA: '-';
@@ -117,7 +126,7 @@ IDENTIFICADOR : [a-zA-Z_][a-zA-Z0-9_]*;
 ID_GLOBAL : '$' [a-zA-Z_][a-zA-Z0-9_]*;
 COMA : ',';
 PUNTOYCOMA : ';';
-RANGO : '..'|'...';
+RANGO : '..';
 CRLF : '\n';
 COMENTARIOS : ('#' ~('\r' | '\n')* '\n' | '=begin' .*? '=end') -> skip;
 CADENA :  '"'( ESCAPEDQUOTE| ~('\n'|'\r') )*? '"'| '\''( ESCAPEDQUOTE| ~('\n'|'\r') )*? '\'';

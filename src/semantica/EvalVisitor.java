@@ -124,6 +124,13 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 					result=new Value(r.asDouble()+r1.asDouble());
 				}
 			break;
+			case "-":
+				if (entero){
+					result=new Value(r.asInteger()-r1.asInteger());
+				}else if (number){
+					result=new Value(r.asDouble()-r1.asDouble());
+				}
+			break;
 			case "*":
 				if (entero){
 					result=new Value(r.asInteger()*r1.asInteger());
@@ -131,6 +138,16 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 					result=new Value(r.asDouble()*r1.asDouble());
 				}
 			break;
+			case "/":
+				if (r1.asInteger()!=0){
+					if (entero){
+						result=new Value(r.asInteger()/r1.asInteger());
+					}else if (number){
+						result=new Value(r.asDouble()/r1.asDouble());
+					}
+				}else{/*ERROR DIVISION BY ZERO TO-DO*/}
+			break;
+
 			/*ADD MORE OPERATORS TO-DO*/
 		}
 		return result;

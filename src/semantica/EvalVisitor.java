@@ -19,13 +19,17 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		variableStack.push(new HashMap<String, Value>());
 	}
 
-	public Value visitAssigment(tfgParser.AssigmentContext ctx) {
+	public Value visitAssignmentStatement(tfgParser.AssignmentStatementContext ctx) {
 		String id = this.visit(ctx.lvalue()).asString();
-		Value value = this.visit(ctx.rvalue());
+		String op = ctx.op.getText();
+		Value rvalue = this.visit(ctx.rvalue());
 		Map<String, Value> variables = variableStack.peek();
-		
-		variables.put(id, value);
-		return Value.VOID;
+		if (variables.containsKey(id)){
+			if (!op.equals("="))
+				rvalue=doOperations(variables.get(id), rvalue, op.split("=")[0]);
+		}
+		variables.put(id, rvalue);
+		return rvalue;
 	}
 	/*Lvalue*/
 	public Value visitLvaluelocal(tfgParser.LvaluelocalContext ctx) {
@@ -51,13 +55,22 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 	/*Rvalue Lvalue*/
 	public Value visitRvalueLvalue(tfgParser.RvalueLvalueContext ctx) {
 		String id = this.visit(ctx.lvalue()).asString();
-		Map<String, Value> variables = variableStack.peek();
-		Value value = variables.get(id);
-		if (value==null){
+		Value value = getVariableValue(id);
+		if (value.equals(Value.VOID)){
 			//ERROR VARIABLE NOT INITIALIZED TO-DO
 		}
 		return value;
 	}
+
+	public Value getVariableValue(String id){
+		Value val=Value.VOID;
+		Map<String, Value> variables = variableStack.peek();
+		if (variables.containsKey(id)){
+			val = variables.get(id);
+		}
+		return val;
+	}
+
 	/*Rvalue Parenthesis*/
 	public Value visitRvalueParenthesis(tfgParser.RvalueParenthesisContext ctx) {
 	   	return this.visit(ctx.val); 
@@ -182,7 +195,6 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		Value r1=this.visit(ctx.r1);
 		String op=ctx.op.getText();
 		Value result=Value.VOID;
-		System.out.println(r1.getClass());
 		switch (op){
 			case "==":
 				result=new Value(r.equals(r1));
@@ -235,8 +247,8 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		return v;
 	}
 
-	public Value visitArray_assigment(tfgParser.Array_assigmentContext ctx) {
-	   	String id = this.visit(ctx.lvalue()).asString();
+	public Value visitArray_assigment(tfgParser.Array_assignmentContext ctx) {
+	   	String id = this.visit(ctx.l).asString();
 		String op = ctx.op.getText();
 		Map<String, Value> variables = variableStack.peek();
 		switch (op){
@@ -252,6 +264,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 
 	public Value visitRvalueArraySelection(tfgParser.RvalueArraySelectionContext ctx) {
 		ArrayList<Value> matrix = null;
+		
 		int index = -1;
 		Value vmatrix=this.visit(ctx.matrix);
 		Value vindex=this.visit(ctx.index);
@@ -259,6 +272,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		if (vmatrix.isList() && vindex.isInteger()){
 			matrix=vmatrix.asList();
 			index=vindex.asInteger();
+			
 			if (index<matrix.size())
 				vfinal=matrix.get(index);
 			else
@@ -279,6 +293,15 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 			}	
 		}
 		return list;
+	}
+	
+	public Value visitArraySingleAssignment(tfgParser.ArraySingleAssignmentContext ctx) {
+		String id = this.visit(ctx.l).asString();
+		Value val = getVariableValue(id);
+		int index = this.visit(ctx.index).asInteger();
+		val.asList().set(index,this.visit(ctx.newValue));
+
+		return val;
 	}
 	
 	/*Llamada Funcion*/
@@ -347,6 +370,19 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		}
 		return Value.VOID;
 	}
+	
+	public Value visitForClassicStatement(tfgParser.ForClassicStatementContext ctx) {
+		this.visit(ctx.leftAssignment).asInteger();
+		boolean condition = this.visit(ctx.condition).asBoolean();
+		for (;condition;){
+			this.visit(ctx.exprFor);
+
+			this.visit(ctx.rightAssignment);
+			condition = this.visit(ctx.condition).asBoolean();
+		}
+		return Value.VOID;
+	}
+
 	/*While statement*/
 	public Value visitWhileStatement(tfgParser.WhileStatementContext ctx) {
 		Value condition = this.visit(ctx.condition);

@@ -36,13 +36,18 @@ elseIf_statement: ELSE IF PARENTESISABIERTO condition=rvalue PARENTESISCERRADO C
 else_statement:ELSE CRLF expr=expression_list #elseStatement;
 
 for_statement : FOR element=lvalue IN iterator=rvalue CRLF exprFor=expression_list END #forInStatement
+			  | FOR PARENTESISABIERTO leftAssignment=assignment PUNTOYCOMA condition=rvalue PUNTOYCOMA rightAssignment=assignment PARENTESISCERRADO CRLF exprFor=expression_list END #forClassicStatement
 			  ;
 
 while_statement : WHILE PARENTESISABIERTO condition=rvalue PARENTESISCERRADO CRLF exprWhile=expression_list END #whileStatement;
 
-assigment: l=lvalue op=(IGUAL | MASIGUAL | MENOSIGUAL | MULTIGUAL | DIVISIONIGUAL | PORCENTAJEIGUAL | ELEVADOIGUAL) r=rvalue;
+assignment: l=lvalue op=operators r=rvalue #assignmentStatement;
 
-array_assigment: l=lvalue  op=(IGUAL | MASIGUAL | MENOSIGUAL)  a=array_definition;
+operators: IGUAL | MASIGUAL | MENOSIGUAL | MULTIGUAL | DIVISIONIGUAL | PORCENTAJEIGUAL | ELEVADOIGUAL;
+
+array_assignment: l=lvalue  op=(IGUAL | MASIGUAL | MENOSIGUAL)  a=array_definition;
+
+array_single_assignment: l=lvalue CORCHETEABIERTO index=rvalue CORCHETECERRADO operators newValue=rvalue #arraySingleAssignment;
 
 array_definition: CORCHETEABIERTO eleArray=array_definition_elements? CORCHETECERRADO;
 
@@ -62,9 +67,10 @@ rvalue:
 	|NULO	#rvalueNull
 	|matrix=rvalue CORCHETEABIERTO index=rvalue CORCHETECERRADO	#rvalueArraySelection
 	|from=rvalue RANGO to=rvalue #rvalueArrayDefRange
+	|assignment	#rvalueregla9
 	|array_definition	#rvalueArrayDefinition
-	|array_assigment	#rvalueregla8
-	|assigment	#rvalueregla9
+	|array_single_assignment #rvalueArraySingleAssign
+	|array_assignment	#rvalueregla8
 	|function_call	#rvalueFunction_call
 	|r=rvalue op=ELEVADO r1=rvalue	#rvalueOp0
 	|r=rvalue op=(MULT | DIVISION | PORCENTAJE) r1=rvalue	#rvalueOp1

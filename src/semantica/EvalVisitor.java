@@ -295,12 +295,11 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		return list;
 	}
 	
-	public Value visitArraySingleAssignment(tfgParser.ArraySingleAssignmentContext ctx) {
-		String id = this.visit(ctx.l).asString();
-		Value val = getVariableValue(id);
+	public Value visitRvalueArrayIndexAssign(tfgParser.RvalueArrayIndexAssignContext ctx) {
+		Value val = this.visit(ctx.l);
 		int index = this.visit(ctx.index).asInteger();
 		val.asList().set(index,this.visit(ctx.newValue));
-
+		/*TO-DO ADD MORE OPERATORS (at the moment only =)*/
 		return val;
 	}
 	
@@ -376,7 +375,8 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		boolean condition = this.visit(ctx.condition).asBoolean();
 		for (;condition;){
 			this.visit(ctx.exprFor);
-
+			
+			/*This do the right assignment and reassign the loop condition*/
 			this.visit(ctx.rightAssignment);
 			condition = this.visit(ctx.condition).asBoolean();
 		}

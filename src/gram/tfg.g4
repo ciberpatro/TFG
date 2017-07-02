@@ -47,8 +47,6 @@ operators: IGUAL | MASIGUAL | MENOSIGUAL | MULTIGUAL | DIVISIONIGUAL | PORCENTAJ
 
 array_assignment: l=lvalue  op=(IGUAL | MASIGUAL | MENOSIGUAL)  a=array_definition;
 
-array_single_assignment: l=lvalue CORCHETEABIERTO index=rvalue CORCHETECERRADO operators newValue=rvalue #arraySingleAssignment;
-
 array_definition: CORCHETEABIERTO eleArray=array_definition_elements? CORCHETECERRADO;
 
 array_definition_elements: (rvalue COMA)* rvalue;
@@ -69,7 +67,7 @@ rvalue:
 	|from=rvalue RANGO to=rvalue #rvalueArrayDefRange
 	|assignment	#rvalueregla9
 	|array_definition	#rvalueArrayDefinition
-	|array_single_assignment #rvalueArraySingleAssign
+	|l=rvalue CORCHETEABIERTO index=rvalue CORCHETECERRADO operators newValue=rvalue #rvalueArrayIndexAssign
 	|array_assignment	#rvalueregla8
 	|function_call	#rvalueFunction_call
 	|r=rvalue op=ELEVADO r1=rvalue	#rvalueOp0

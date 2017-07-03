@@ -4,16 +4,21 @@ public class Value {
 
 	public static Value VOID = new Value(new Object());
 
-	private final Object value;
+	private Object value;
 
 	public Value(Object value) {
 		this.value = value;
+	}
+	
+	public Value(Value value){
+		this.value=value.getValue();
+		if (value.isList()) this.value = value.asList().clone();
 	}
 
 	private Object getValue(){
 		return value;
 	}
-
+	
 	public Boolean asBoolean() {
 		return (Boolean) value;
 	}

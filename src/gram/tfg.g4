@@ -23,6 +23,7 @@ return_statement: RETURN rvalue CRLF;
  
 function_call : PRINT PARENTESISABIERTO rvalue PARENTESISCERRADO # function_call_print
 			  | SIZE PARENTESISABIERTO rvalue PARENTESISCERRADO # function_call_size
+			  | COPY PARENTESISABIERTO val=rvalue PARENTESISCERRADO # function_call_copy
 			  | id=IDENTIFICADOR PARENTESISABIERTO param=function_call_param_list? PARENTESISCERRADO # function_call_id
 			  ;
 
@@ -81,6 +82,7 @@ rvalue:
 
 PRINT : 'print';
 SIZE : 'size';
+COPY : 'copy';
 REQUIRE : 'require';
 END : 'end';
 DEF : 'function';

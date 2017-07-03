@@ -233,6 +233,12 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		return new Value(size);
 	}
 
+	public Value visitFunction_call_copy(tfgParser.Function_call_copyContext ctx) {
+		Value val = new Value(this.visit(ctx.val));
+		System.out.println("asdf");
+		return val;
+	}	
+
 	/*Arrays*/
 	public Value visitArray_definition(tfgParser.Array_definitionContext ctx) {
 		Value v=Value.VOID;

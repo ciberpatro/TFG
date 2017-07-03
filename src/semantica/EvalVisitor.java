@@ -234,9 +234,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 	}
 
 	public Value visitFunction_call_copy(tfgParser.Function_call_copyContext ctx) {
-		Value val = new Value(this.visit(ctx.val));
-		System.out.println("asdf");
-		return val;
+		return new Value(this.visit(ctx.val));
 	}	
 
 	/*Arrays*/
@@ -281,8 +279,14 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 			
 			if (index<matrix.size())
 				vfinal=matrix.get(index);
-			else
-				System.out.println("Index Error");
+			else {
+				System.out.printf("Index Error.\n"
+								+ "Index: %d\n"
+								+ "Matrix: %s Size: %d"
+								+ "\nLine: %d\n",
+								index, matrix, matrix.size(), ctx.start.getLine());
+				System.exit(0);
+			}
 		}else
 			System.out.println("Object: "+ vmatrix.getValClass() +" is not iterable" );	
 		return vfinal; 

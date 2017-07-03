@@ -18,7 +18,7 @@ public class Value {
 	private Object getValue(){
 		return value;
 	}
-	
+
 	public Boolean asBoolean() {
 		return (Boolean) value;
 	}

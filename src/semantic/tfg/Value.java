@@ -1,4 +1,4 @@
-package semantica;
+package semantic.tfg;
 import java.util.ArrayList;
 public class Value {
 

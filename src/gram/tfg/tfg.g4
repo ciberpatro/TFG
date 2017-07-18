@@ -2,7 +2,7 @@ grammar tfg;
 
 start : CRLF* expression_list EOF;
 
-expression_list : (expression CRLF+)*;
+expression_list : (CRLF* expression CRLF+)*;
  
 expression : function_definition # expression_function_definition
 			|if_statement # expression_if_statement

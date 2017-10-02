@@ -1,8 +1,8 @@
 grammar tfg;
 
-start : CRLF* expression_list EOF;
+start : CRLF* expression_list;
 
-expression_list : (CRLF* expression CRLF+)*;
+expression_list : (expression (CRLF+ | EOF) )*;
  
 expression : function_definition # expression_function_definition
 			|if_statement # expression_if_statement

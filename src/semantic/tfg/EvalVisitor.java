@@ -11,7 +11,7 @@ import org.antlr.v4.runtime.tree.*;
 
 public class EvalVisitor extends tfgBaseVisitor<Value> {
 	private Map<String,tfgParser.Function_definitionContext> functions;
-	private Stack<Map<String, Value>> variableStack; 
+	protected Stack<Map<String, Value>> variableStack; 
 	
 	public EvalVisitor(){
 		functions = new HashMap<String,tfgParser.Function_definitionContext>(); 
@@ -288,7 +288,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 				System.exit(0);
 			}
 		}else
-			System.out.println("Object: "+ vmatrix.getValClass() +" is not iterable" );	
+			System.out.println("Object: "+ vmatrix.getValClass() +" is not iterable" );
 		return vfinal; 
 	}
 
@@ -315,7 +315,6 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 	
 	/*Llamada Funcion*/
 	public Value visitFunction_call_id(tfgParser.Function_call_idContext ctx) {
-	
 		tfgParser.Function_definitionContext func=functions.get(ctx.id.getText());//Funcion
 		int idType=func.header.id.getType();//Tipo toquen (IDENTIFICADOR)
 		
@@ -356,6 +355,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		}else{/*ERROR NO BOOLEAN EXPRESION TO-DO*/}
 		return Value.VOID;
 	}
+	
 	/*ElseIf statement*/
 	public Value visitElseIfStatement(tfgParser.ElseIfStatementContext ctx) {
 		Value condition=this.visit(ctx.condition);

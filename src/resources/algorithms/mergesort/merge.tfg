@@ -15,7 +15,7 @@ function mezcla(v,li,med,ls)
 	rec = li
 	rec1 = li
 	rec2 = med+1
-	w=copy(v)
+	w = copy(v)
 	while ((rec1 <= med) and (rec2 <= ls))
 		if (v[rec1] < v[rec2])
 			w[rec] = v[rec1]
@@ -41,6 +41,5 @@ function mezcla(v,li,med,ls)
 end
 
 list= [3,4,5,2,6,1,5]
-print(list)
+
 sort(list)
-print(list)

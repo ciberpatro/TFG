@@ -1,44 +1,62 @@
 package gui;
 
 import java.awt.BorderLayout;
-import java.awt.EventQueue;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.text.BadLocationException;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.tree.ParseTree;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import domain.Algorithm;
+import gram.tfg.tfgLexer;
+import gram.tfg.tfgParser;
+import semantic.tfgGUI.EvalVisitorGUI;
+import semantic.tfgGUI.State;
+
 import javax.swing.JSplitPane;
 import javax.swing.JButton;
-import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
 import javax.swing.JScrollPane;
-import javax.swing.JTextPane;
+import javax.swing.Timer;
 import javax.swing.JTextArea;
 import javax.swing.JLabel;
-import java.awt.Dimension;
 import java.awt.event.ActionListener;
+import java.util.ListIterator;
 import java.awt.event.ActionEvent;
+import java.awt.FlowLayout;
 
 public class AlgorithmVisu extends JFrame {
-
+	
+	private final int TIMER_SPEED = 500;
+	
 	private JPanel contentPane;
 	private JSplitPane splitPane;
 	private JPanel panel;
 	private JButton btnPlay;
-	private JButton btnStepByStep;
+	private JButton btnForward;
 	private JPanel panelAlgo;
 	private JSplitPane splitPane_1;
-	private RSyntaxTextArea textArea;
+	private RSyntaxTextArea algoText;
 	private RTextScrollPane sp;
 	private JScrollPane scrollPane;
 	private JTextArea textAreaDebug;
 	private JLabel lblVisualization;
+	private Timer timerVisualization;
+	private tfgLexer lexer;
+	private tfgParser parser;
+	private ParseTree tree;
+	private EvalVisitorGUI visitor;
+	private ListIterator<State> states;
+	private JButton btnBackward;
+	private int mode = Mode.DEFAULT;
+	private JButton btnStop;
+	private JButton btnPause;
 
 	public AlgorithmVisu(Algorithm algorithm) {
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
@@ -68,44 +86,169 @@ public class AlgorithmVisu extends JFrame {
 		lblVisualization = new JLabel("");
 		splitPane_1.setLeftComponent(lblVisualization);
 		
+		algoText = new RSyntaxTextArea();
+		algoText.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_RUBY);
+		algoText.setCodeFoldingEnabled(true);
+		panelAlgo.setLayout(new BorderLayout(0, 0));
+		sp = new RTextScrollPane(algoText);
+		panelAlgo.add(sp);
+		
 		panel = new JPanel();
-		contentPane.add(panel, BorderLayout.SOUTH);
-		GridBagLayout gbl_panel = new GridBagLayout();
-		gbl_panel.columnWidths = new int[]{64, 125, 0};
-		gbl_panel.rowHeights = new int[]{25, 0};
-		gbl_panel.columnWeights = new double[]{0.0, 0.0, Double.MIN_VALUE};
-		gbl_panel.rowWeights = new double[]{0.0, Double.MIN_VALUE};
-		panel.setLayout(gbl_panel);
+		panelAlgo.add(panel, BorderLayout.SOUTH);
 		
 		btnPlay = new JButton("Play");
 		btnPlay.addActionListener(new BtnPlayActionListener());
-		GridBagConstraints gbc_btnPlay = new GridBagConstraints();
-		gbc_btnPlay.anchor = GridBagConstraints.NORTH;
-		gbc_btnPlay.insets = new Insets(0, 0, 0, 5);
-		gbc_btnPlay.gridx = 0;
-		gbc_btnPlay.gridy = 0;
-		panel.add(btnPlay, gbc_btnPlay);
+		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+		panel.add(btnPlay);
 		
-		btnStepByStep = new JButton("Step by Step");
-		GridBagConstraints gbc_btnStepByStep = new GridBagConstraints();
-		gbc_btnStepByStep.anchor = GridBagConstraints.NORTH;
-		gbc_btnStepByStep.gridx = 1;
-		gbc_btnStepByStep.gridy = 0;
-		panel.add(btnStepByStep, gbc_btnStepByStep);
+		btnStop = new JButton("Stop");
+		btnStop.addActionListener(new BtnStopActionListener());
+		panel.add(btnStop);
 		
-		textArea = new RSyntaxTextArea();
-		textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_RUBY);
-		textArea.setCodeFoldingEnabled(true);
-		panelAlgo.setLayout(new BorderLayout(0, 0));
-		sp = new RTextScrollPane(textArea);
-		panelAlgo.add(sp);
+		btnPause = new JButton("Pause");
+		btnPause.addActionListener(new BtnPauseActionListener());
 		
-		textArea.setText(algorithm.getAlgorithm());
+		btnBackward = new JButton("Backward");
+		btnBackward.setEnabled(false);
+		btnBackward.addActionListener(new BtnBackwardActionListener());
+		panel.add(btnBackward);
+		panel.add(btnPause);
+		
+		btnForward = new JButton("Forward");
+		btnForward.addActionListener(new BtnStepByStepActionListener());
+		panel.add(btnForward);
+		
+		algoText.setText(algorithm.getAlgorithm());
+		
+		timerVisualization = new Timer(TIMER_SPEED, new BtnPlayTimerActionListener ());
+		
 	}
-
-	private class BtnPlayActionListener implements ActionListener {
-		public void actionPerformed(ActionEvent arg0) {
+	
+	public void autoButtons(){
+		switch (mode){
+		case Mode.PAUSE:
+			btnPlay.setEnabled(true);
+			btnBackward.setEnabled(true);
+			break;
+		case Mode.DEFAULT:
+			btnPlay.setEnabled(true);
+			algoText.setEnabled(true);
+			btnBackward.setEnabled(false);
+			break;
+		case Mode.PLAY:
+			btnPlay.setEnabled(false);
+			algoText.setEnabled(false);
+			btnBackward.setEnabled(true);
+		case Mode.STEP:
+			algoText.setEnabled(false);
+			btnBackward.setEnabled(true);
+			break;
 			
 		}
+		
 	}
+	
+	public void parseAlgorithm(){
+		if (mode == Mode.DEFAULT){
+			lexer = new tfgLexer(CharStreams.fromString(algoText.getText()));
+			parser = new tfgParser(new CommonTokenStream(lexer));
+			tree = parser.start();
+			visitor = new EvalVisitorGUI();
+			visitor.visit(tree);
+			states = visitor.getStates().listIterator();
+			
+			textAreaDebug.setText("");
+		}
+	}
+	
+	private class BtnPlayActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent arg0) {
+			parseAlgorithm();
+			mode = Mode.PLAY;
+			
+			timerVisualization.start();
+			
+			autoButtons();
+		}
+	}
+	private class BtnStepByStepActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			State s=null;
+			parseAlgorithm();
+			mode = Mode.STEP;
+			autoButtons();
+			if (states.hasNext()){
+	    		s = states.next();
+	    		try {
+					algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
+				} catch (BadLocationException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+	    		textAreaDebug.setText(textAreaDebug.getText()+s+"\n");
+	    	}else{
+	    		mode = Mode.DEFAULT;
+	    		autoButtons();
+	    	}
+		}
+	}
+	private class BtnStopActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			mode = Mode.DEFAULT;
+			autoButtons();
+			timerVisualization.stop();
+		}
+	}
+	private class BtnPauseActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			if (mode != Mode.DEFAULT){
+				mode = Mode.PAUSE;
+				timerVisualization.stop();
+			}
+			autoButtons();
+		}
+	}
+	private class BtnBackwardActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			State s=null;
+			mode = Mode.STEP;
+			autoButtons();
+
+			if (states.hasPrevious()){
+	    		s = states.previous();
+	    		try {
+					algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
+				} catch (BadLocationException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+	    		textAreaDebug.setText(textAreaDebug.getText()+s+"\n");
+	    	}else{
+	    		mode = Mode.DEFAULT;
+	    		autoButtons();
+	    	}
+		}
+	}
+
+	private class BtnPlayTimerActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			State s = null;
+			if (states.hasNext()) {
+				s = states.next();
+				try {
+					algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
+				} catch (BadLocationException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				textAreaDebug.setText(textAreaDebug.getText() + s + "\n");
+			} else {
+				mode = Mode.DEFAULT;
+				autoButtons();
+				timerVisualization.stop();
+			}
+
+		}
+	}
+	
 }

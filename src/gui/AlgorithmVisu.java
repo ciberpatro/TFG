@@ -1,10 +1,13 @@
 package gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
+import javax.swing.border.LineBorder;
 import javax.swing.text.BadLocationException;
 
 import org.antlr.v4.runtime.CharStreams;
@@ -14,39 +17,53 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
+import com.mxgraph.swing.mxGraphComponent;
+import com.mxgraph.view.mxGraph;
+
 import domain.Algorithm;
 import gram.tfg.tfgLexer;
 import gram.tfg.tfgParser;
+import semantic.tfg.Value;
 import semantic.tfgGUI.EvalVisitorGUI;
 import semantic.tfgGUI.State;
 
 import javax.swing.JSplitPane;
+import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
 import javax.swing.JTextArea;
 import javax.swing.JLabel;
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.ListIterator;
+import java.util.Map.Entry;
+import java.util.Set;
 import java.awt.event.ActionEvent;
 import java.awt.FlowLayout;
+import java.awt.GridBagLayout;
+import java.awt.GridBagConstraints;
+import java.awt.Insets;
+import java.awt.GridLayout;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 public class AlgorithmVisu extends JFrame {
 	
 	private final int TIMER_SPEED = 500;
 	
 	private JPanel contentPane;
-	private JSplitPane splitPane;
+	private JSplitPane splitAlgoMenu;
 	private JPanel panel;
 	private JButton btnPlay;
 	private JButton btnForward;
 	private JPanel panelAlgo;
-	private JSplitPane splitPane_1;
+	private JSplitPane splitStackLine;
 	private RSyntaxTextArea algoText;
 	private RTextScrollPane sp;
-	private JScrollPane scrollPane;
+	private JScrollPane scrollLine;
 	private JTextArea textAreaDebug;
-	private JLabel lblVisualization;
 	private Timer timerVisualization;
 	private tfgLexer lexer;
 	private tfgParser parser;
@@ -57,8 +74,15 @@ public class AlgorithmVisu extends JFrame {
 	private int mode = Mode.DEFAULT;
 	private JButton btnStop;
 	private JButton btnPause;
-
-	public AlgorithmVisu(Algorithm algorithm) {
+	private JScrollPane scrollStack;
+	private StackPanel pnlStack;
+	private JLabel lblNewLabel;
+	private JFrame parent;
+	private JLabel lblNewLabel_1;
+	
+	public AlgorithmVisu(Algorithm algorithm, JFrame parent) {
+		this.parent = parent;
+		addWindowListener(new ThisWindowListener());
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 864, 428);
 		contentPane = new JPanel();
@@ -66,25 +90,36 @@ public class AlgorithmVisu extends JFrame {
 		contentPane.setLayout(new BorderLayout(0, 0));
 		setContentPane(contentPane);
 		
-		splitPane = new JSplitPane();
-		splitPane.setResizeWeight(0.15);
-		contentPane.add(splitPane, BorderLayout.CENTER);
+		splitAlgoMenu = new JSplitPane();
+		splitAlgoMenu.setResizeWeight(0.15);
+		contentPane.add(splitAlgoMenu, BorderLayout.CENTER);
 		
 		panelAlgo = new JPanel();
-		splitPane.setLeftComponent(panelAlgo);
+		splitAlgoMenu.setLeftComponent(panelAlgo);
 		
-		splitPane_1 = new JSplitPane();
-		splitPane_1.setOrientation(JSplitPane.VERTICAL_SPLIT);
-		splitPane.setRightComponent(splitPane_1);
+		splitStackLine = new JSplitPane();
+		splitStackLine.setResizeWeight(0.5);
+		splitStackLine.setOrientation(JSplitPane.VERTICAL_SPLIT);
+		splitAlgoMenu.setRightComponent(splitStackLine);
 		
-		scrollPane = new JScrollPane();
-		splitPane_1.setRightComponent(scrollPane);
+		scrollLine = new JScrollPane();
+		splitStackLine.setRightComponent(scrollLine);
 		
 		textAreaDebug = new JTextArea();
-		scrollPane.setViewportView(textAreaDebug);
+		scrollLine.setViewportView(textAreaDebug);
 		
-		lblVisualization = new JLabel("");
-		splitPane_1.setLeftComponent(lblVisualization);
+		scrollStack = new JScrollPane();
+		splitStackLine.setLeftComponent(scrollStack);
+		
+		pnlStack = new StackPanel();
+		scrollStack.setViewportView(pnlStack);
+		GridBagLayout gbl_pnlStack = new GridBagLayout();
+		gbl_pnlStack.columnWidths = new int[]{0};
+		gbl_pnlStack.columnWeights = new double[]{Double.MIN_VALUE};
+		
+		gbl_pnlStack.rowHeights = new int[]{0};
+		gbl_pnlStack.rowWeights = new double[]{Double.MIN_VALUE};
+		pnlStack.setLayout(gbl_pnlStack);
 		
 		algoText = new RSyntaxTextArea();
 		algoText.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_RUBY);
@@ -161,6 +196,27 @@ public class AlgorithmVisu extends JFrame {
 		}
 	}
 	
+	public void stackVisualization(State s){
+		Set<Entry<String, Value>> stack = s.getVariables().entrySet();
+		StackLayout stackLayout = new StackLayout(stack.size());
+		pnlStack.removeAll();
+		pnlStack.setLayout(stackLayout);
+		for (Entry<String, Value> e: stack){
+			Value right = e.getValue();
+			if (!right.isList()){
+				pnlStack.addRow(new JLabel(e.getKey() +": "), new JLabel(right.toString()));
+			}else{
+				ArrayList<Value> list = right.asList();
+				GraphTFG graph = new GraphTFG(list);
+				Component graphComp = graph.getComponent();
+				graphComp.setEnabled(false);
+				pnlStack.addRow(new JLabel(e.getKey() +": "), graphComp);
+			}
+		}
+		pnlStack.revalidate();
+		pnlStack.repaint();
+	}
+	
 	private class BtnPlayActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent arg0) {
 			parseAlgorithm();
@@ -171,6 +227,7 @@ public class AlgorithmVisu extends JFrame {
 			autoButtons();
 		}
 	}
+	
 	private class BtnStepByStepActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			State s=null;
@@ -186,6 +243,7 @@ public class AlgorithmVisu extends JFrame {
 					e1.printStackTrace();
 				}
 	    		textAreaDebug.setText(textAreaDebug.getText()+s+"\n");
+	    		stackVisualization(s);
 	    	}else{
 	    		mode = Mode.DEFAULT;
 	    		autoButtons();
@@ -248,6 +306,12 @@ public class AlgorithmVisu extends JFrame {
 				timerVisualization.stop();
 			}
 
+		}
+	}
+	private class ThisWindowListener extends WindowAdapter {
+		@Override
+		public void windowClosing(WindowEvent arg0) {
+			parent.setVisible(true);
 		}
 	}
 	

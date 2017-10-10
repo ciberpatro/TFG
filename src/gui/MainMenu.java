@@ -100,6 +100,7 @@ public class MainMenu extends JFrame {
 		panel_1.add(btnOk, gbc_btnOk);
 		
 		btnExit = new JButton("Exit");
+		btnExit.addActionListener(new BtnExitActionListener());
 		GridBagConstraints gbc_btnExit = new GridBagConstraints();
 		gbc_btnExit.fill = GridBagConstraints.HORIZONTAL;
 		gbc_btnExit.anchor = GridBagConstraints.NORTH;
@@ -138,9 +139,14 @@ public class MainMenu extends JFrame {
 	private class BtnOkActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent arg0) {
 			Algorithm algorithm = (Algorithm)cbAlgorithms.getSelectedItem();
-			AlgorithmVisu algovisu =new AlgorithmVisu(algorithm);
+			AlgorithmVisu algovisu =new AlgorithmVisu(algorithm, MainMenu.this);
 			algovisu.setVisible(true);
 			setVisible(false);
+		}
+	}
+	private class BtnExitActionListener implements ActionListener {
+		public void actionPerformed(ActionEvent e) {
+			dispose();
 		}
 	}
 }

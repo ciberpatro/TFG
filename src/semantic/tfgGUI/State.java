@@ -1,6 +1,9 @@
 package semantic.tfgGUI;
 
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Set;
 
 import semantic.tfg.Value;
 
@@ -15,7 +18,11 @@ public class State {
 		for (int i=0;i<ntabs;i++)
 			this.sline+=SPACE_WIDTH;
 		this.sline+=sline;
-		this.variables=variables;
+		this.variables=new HashMap<String, Value>();
+		Set<Entry<String, Value>> var = variables.entrySet();
+		for (Entry<String, Value> e : var ){
+			this.variables.put(e.getKey(), new Value(e.getValue()));
+		}
 	}
 	
 	public int getNline() {

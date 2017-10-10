@@ -2,6 +2,7 @@ package semantic.tfgGUI;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -41,18 +42,10 @@ public class EvalVisitorGUI extends EvalVisitor {
 		return rvalue;
 	}
 	
-	private String parseForIter(tfgParser.ForClassicStatementContext ctx){
-		String line = ctx.FOR().getText() + "("
-				+getStringLine(ctx.leftAssignment.children)+";"
-				+getStringLine(ctx.condition.children)+";"
-				+getStringLine(ctx.rightAssignment.children)+")";
-		return line;
-	}
-	
 	public ArrayList<State> getStates() {
 		return states;
 	}
-
+	
 	public Value visitIfStatement(tfgParser.IfStatementContext ctx) {
 		String line = ctx.IF()+"("+getStringLine(ctx.condition.children)+")";
 		states.add(new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek()));

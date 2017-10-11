@@ -1,13 +1,11 @@
 package gui;
 
 import java.awt.BorderLayout;
-import java.awt.Color;
 import java.awt.Component;
 
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.LineBorder;
 import javax.swing.text.BadLocationException;
 
 import org.antlr.v4.runtime.CharStreams;
@@ -17,9 +15,6 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
-import com.mxgraph.swing.mxGraphComponent;
-import com.mxgraph.view.mxGraph;
-
 import domain.Algorithm;
 import gram.tfg.tfgLexer;
 import gram.tfg.tfgParser;
@@ -28,7 +23,6 @@ import semantic.tfgGUI.EvalVisitorGUI;
 import semantic.tfgGUI.State;
 
 import javax.swing.JSplitPane;
-import javax.swing.BorderFactory;
 import javax.swing.JButton;
 import javax.swing.JScrollPane;
 import javax.swing.Timer;
@@ -36,16 +30,12 @@ import javax.swing.JTextArea;
 import javax.swing.JLabel;
 import java.awt.event.ActionListener;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.awt.event.ActionEvent;
 import java.awt.FlowLayout;
 import java.awt.GridBagLayout;
-import java.awt.GridBagConstraints;
-import java.awt.Insets;
-import java.awt.GridLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
@@ -76,9 +66,7 @@ public class AlgorithmVisu extends JFrame {
 	private JButton btnPause;
 	private JScrollPane scrollStack;
 	private StackPanel pnlStack;
-	private JLabel lblNewLabel;
 	private JFrame parent;
-	private JLabel lblNewLabel_1;
 	
 	public AlgorithmVisu(Algorithm algorithm, JFrame parent) {
 		this.parent = parent;
@@ -198,20 +186,17 @@ public class AlgorithmVisu extends JFrame {
 	
 	public void stackVisualization(State s){
 		Set<Entry<String, Value>> stack = s.getVariables().entrySet();
-		StackLayout stackLayout = new StackLayout(stack.size());
+		Set<Entry<String, GraphTFG>> graph_list = s.getGraphs().entrySet();
+		StackLayout stackLayout = new StackLayout(stack.size()+graph_list.size());
 		pnlStack.removeAll();
 		pnlStack.setLayout(stackLayout);
+		for (Entry<String, GraphTFG> e: graph_list){
+			Component graphComp = e.getValue().getComponent();
+			graphComp.setEnabled(false);
+			pnlStack.addRow(new JLabel(e.getKey() +": "), graphComp);
+		}
 		for (Entry<String, Value> e: stack){
-			Value right = e.getValue();
-			if (!right.isList()){
-				pnlStack.addRow(new JLabel(e.getKey() +": "), new JLabel(right.toString()));
-			}else{
-				ArrayList<Value> list = right.asList();
-				GraphTFG graph = new GraphTFG(list);
-				Component graphComp = graph.getComponent();
-				graphComp.setEnabled(false);
-				pnlStack.addRow(new JLabel(e.getKey() +": "), graphComp);
-			}
+			pnlStack.addRow(new JLabel(e.getKey() +": "), new JLabel(e.getValue().toString()));
 		}
 		pnlStack.revalidate();
 		pnlStack.repaint();
@@ -281,6 +266,7 @@ public class AlgorithmVisu extends JFrame {
 					e1.printStackTrace();
 				}
 	    		textAreaDebug.setText(textAreaDebug.getText()+s+"\n");
+	    		stackVisualization(s);
 	    	}else{
 	    		mode = Mode.DEFAULT;
 	    		autoButtons();
@@ -300,6 +286,7 @@ public class AlgorithmVisu extends JFrame {
 					e1.printStackTrace();
 				}
 				textAreaDebug.setText(textAreaDebug.getText() + s + "\n");
+				stackVisualization(s);
 			} else {
 				mode = Mode.DEFAULT;
 				autoButtons();
@@ -309,7 +296,6 @@ public class AlgorithmVisu extends JFrame {
 		}
 	}
 	private class ThisWindowListener extends WindowAdapter {
-		@Override
 		public void windowClosing(WindowEvent arg0) {
 			parent.setVisible(true);
 		}

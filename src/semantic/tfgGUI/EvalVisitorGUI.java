@@ -42,6 +42,11 @@ public class EvalVisitorGUI extends EvalVisitor {
 		return rvalue;
 	}
 	
+	private void setCellColor(String var, int index){
+	//	if (states.size()>0&&index>=0&&index<states.size())
+			states.get(states.size()-1).updateGraph(var, index);
+	}
+	
 	public ArrayList<State> getStates() {
 		return states;
 	}
@@ -54,7 +59,7 @@ public class EvalVisitorGUI extends EvalVisitor {
 	
 	public Value visitAssignmentStatement(tfgParser.AssignmentStatementContext ctx) {
 		String line = ctx.l.getText() + ctx.op.getText() + super.visit(ctx.r);
-		Value test= super.visitAssignmentStatement(ctx);
+		Value value= super.visitAssignmentStatement(ctx);
 		if (states.size()>=0){
 			if (!(ctx.getParent() instanceof tfgParser.ForClassicStatementContext)){
 				states.add(new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek()));
@@ -67,7 +72,7 @@ public class EvalVisitorGUI extends EvalVisitor {
 				states.add(new State (ctx.start.getLine(),ctx.getParent().start.getCharPositionInLine(),line,variableStack.peek()));
 			}
 		}
-		return test;
+		return value;
 	}
 	
 	public Value visitFunction_call_id(tfgParser.Function_call_idContext ctx) {
@@ -89,13 +94,22 @@ public class EvalVisitorGUI extends EvalVisitor {
 	}
 
 	public Value visitRvalueArrayIndexAssign(tfgParser.RvalueArrayIndexAssignContext ctx) {
+		//System.out.println(ctx.start.getLine()+"\t"+ctx.l.getText()+"["+ctx.index.getText()+"]"+"\tRvalueArrayIndexAssign");
 		String line = super.visit(ctx.l)+"["+super.visit(ctx.index)+"]"+ctx.operators().getText()+super.visit(ctx.newValue);
+
 		states.add(new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek()));
-		return super.visitRvalueArrayIndexAssign(ctx);
+		Value val = super.visitRvalueArrayIndexAssign(ctx);
+		setCellColor(ctx.l.getText(), super.visit(ctx.index).asInteger());
+		return val;
+	}
+	
+	public Value visitRvalueArraySelection(tfgParser.RvalueArraySelectionContext ctx) {
+		Value val = super.visitRvalueArraySelection(ctx);
+		setCellColor(ctx.matrix.getText(), super.visit(ctx.index).asInteger());
+		return val;
 	}
 	
 	public Value visitWhileStatement(tfgParser.WhileStatementContext ctx) {
-		
 		Value condition = this.visit(ctx.condition);
 		if (condition.isBoolean()){
 			String line = ctx.WHILE()+"("+getStringLine(ctx.rvalue().children)+")";

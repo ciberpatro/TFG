@@ -1,8 +1,7 @@
 package gui;
 import java.awt.GridBagLayout;
 
-public class StackLayout extends GridBagLayout{
-	private int y;
+public class StackLayout extends GridBagLayout {
 	public StackLayout(int s) {
 		super();
 		super.columnWidths = new int[]{10, 0, 0, 10, 0};

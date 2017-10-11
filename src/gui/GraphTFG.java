@@ -17,16 +17,17 @@ public class GraphTFG extends mxGraph{
 		this.getModel().beginUpdate();
 		try
 		{
-			v1 = this.insertVertex(parent, null, list.get(0), 0, 0, 0, 0);
+			v1 = this.insertVertex(parent, "I0", list.size()>0 ? list.get(0) : "  ", 0, 0, 0, 0,"fillColor=lightblue");
 		}
 		finally
 		{
 			this.getModel().endUpdate();
 		}
+		
 		updateCellSize(v1);
 		for (int i=1;i<list.size();i++){
 			mxRectangle v1r = getCellBounds(v1);
-			Object v2 = this.insertVertex(parent, null, list.get(i), v1r.getCenterX()+v1r.getWidth()/2, 0, 0, 0);
+			Object v2 = this.insertVertex(parent, "I"+i, list.get(i), v1r.getCenterX()+v1r.getWidth()/2, 0, 0, 0,"fillColor=lightblue");
 			//this.insertEdge(parent, null, "", v1, v2);
 			v1 = v2;
 			updateCellSize(v1);

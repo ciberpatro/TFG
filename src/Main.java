@@ -8,8 +8,6 @@ import gram.tfg.tfgLexer;
 import gram.tfg.tfgParser;
 import gui.MainMenu;
 import semantic.tfg.EvalVisitor;
-import semantic.tfgGUI.EvalVisitorGUI;
-import semantic.tfgGUI.State;
 
 public class Main {
 	public static void main(String[] args) throws Exception {

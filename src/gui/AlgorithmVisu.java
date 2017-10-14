@@ -10,6 +10,7 @@ import javax.swing.text.BadLocationException;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
@@ -177,9 +178,12 @@ public class AlgorithmVisu extends JFrame {
 			parser = new tfgParser(new CommonTokenStream(lexer));
 			tree = parser.start();
 			visitor = new EvalVisitorGUI();
-			visitor.visit(tree);
-			states = visitor.getStates().listIterator();
-			
+			try{
+				visitor.visit(tree);
+				states = visitor.getStates().listIterator();
+			}catch (ParseCancellationException e){
+				states = null;
+			}
 			textAreaDebug.setText("");
 		}
 	}
@@ -219,7 +223,7 @@ public class AlgorithmVisu extends JFrame {
 			parseAlgorithm();
 			mode = Mode.STEP;
 			autoButtons();
-			if (states.hasNext()){
+			if (states!=null&&states.hasNext()){
 	    		s = states.next();
 	    		try {
 					algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
@@ -256,8 +260,7 @@ public class AlgorithmVisu extends JFrame {
 			State s=null;
 			mode = Mode.STEP;
 			autoButtons();
-
-			if (states.hasPrevious()){
+			if (states!=null&&states.hasPrevious()){
 	    		s = states.previous();
 	    		try {
 					algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
@@ -277,7 +280,7 @@ public class AlgorithmVisu extends JFrame {
 	private class BtnPlayTimerActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			State s = null;
-			if (states.hasNext()) {
+			if (states!=null&&states.hasNext()) {
 				s = states.next();
 				try {
 					algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));

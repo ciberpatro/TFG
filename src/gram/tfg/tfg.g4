@@ -46,8 +46,6 @@ assignment: l=lvalue op=operators r=rvalue #assignmentStatement;
 
 operators: IGUAL | MASIGUAL | MENOSIGUAL | MULTIGUAL | DIVISIONIGUAL | PORCENTAJEIGUAL | ELEVADOIGUAL;
 
-array_assignment: l=lvalue  op=(IGUAL | MASIGUAL | MENOSIGUAL)  a=array_definition;
-
 array_definition: CORCHETEABIERTO eleArray=array_definition_elements? CORCHETECERRADO;
 
 array_definition_elements: (rvalue COMA)* rvalue;
@@ -69,8 +67,8 @@ rvalue:
 	|assignment	#rvalueregla9
 	|array_definition	#rvalueArrayDefinition
 	|l=rvalue CORCHETEABIERTO index=rvalue CORCHETECERRADO operators newValue=rvalue #rvalueArrayIndexAssign
-	|array_assignment	#rvalueregla8
 	|function_call	#rvalueFunction_call
+	|op=(SUMA | RESTA) r=rvalue #rvalueUnaryOp
 	|r=rvalue op=ELEVADO r1=rvalue	#rvalueOp0
 	|r=rvalue op=(MULT | DIVISION | PORCENTAJE) r1=rvalue	#rvalueOp1
 	|r=rvalue op=(SUMA | RESTA) r1=rvalue	#rvalueop2
@@ -80,6 +78,8 @@ rvalue:
 	|r=rvalue op=COMPARADORES2 r1=rvalue	#rvalueComp2
 	;
 
+ENTERO : [0-9]+ ;
+FLOAT : [0-9]+'.'[0-9]+;
 PRINT : 'print';
 SIZE : 'size';
 COPY : 'copy';
@@ -126,8 +126,6 @@ PARENTESISCERRADO : ')';
 CORCHETEABIERTO : '[';
 CORCHETECERRADO : ']';
 NULO : 'nil';
-ENTERO : [0-9]+ ;
-FLOAT : [0-9]+'.'[0-9]+;
 IDENTIFICADOR : [a-zA-Z_][a-zA-Z0-9_]*;
 ID_GLOBAL : '$' [a-zA-Z_][a-zA-Z0-9_]*;
 COMA : ',';

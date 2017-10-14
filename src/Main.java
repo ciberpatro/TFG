@@ -2,6 +2,7 @@ import java.lang.Exception;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import gram.tfg.tfgLexer;
@@ -21,7 +22,9 @@ public class Main {
 				tfgParser parser = new tfgParser(new CommonTokenStream(lexer));
 				ParseTree tree = parser.start();
 				EvalVisitor visitor = new EvalVisitor();
-				visitor.visit(tree);
+				try{
+					visitor.visit(tree);
+				}catch (ParseCancellationException e){}
 			}
 		}
 	}

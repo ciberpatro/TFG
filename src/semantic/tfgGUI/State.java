@@ -49,9 +49,11 @@ public class State {
 		return graph_list;
 	}
 	public void updateGraph(String id, int index){
-		mxGraphModel a = (mxGraphModel) graph_list.get(id).getModel();
-		
-		graph_list.get(id).setCellStyle("fillColor=orange",new Object[]{a.getCell("I"+index)});
+		mxGraphModel a = null;
+		if (graph_list.get(id) != null){
+			a = (mxGraphModel) graph_list.get(id).getModel();
+			graph_list.get(id).setCellStyle("fillColor=orange",new Object[]{a.getCell("I"+index)});
+		}
 	}
 	public String toString(){
 		return sline;

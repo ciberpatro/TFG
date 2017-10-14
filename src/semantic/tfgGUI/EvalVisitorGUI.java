@@ -4,6 +4,9 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import javax.swing.JOptionPane;
+
+import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 import gram.tfg.tfgParser;
@@ -41,9 +44,15 @@ public class EvalVisitorGUI extends EvalVisitor {
 		}
 		return rvalue;
 	}
-	
+	protected void handleError(String error, int line) {
+		JOptionPane.showMessageDialog(null,
+			    error + "\nLine: "+line,
+			    "Error",
+			    JOptionPane.ERROR_MESSAGE);
+		throw new ParseCancellationException();
+	}
 	private void setCellColor(String var, int index){
-	//	if (states.size()>0&&index>=0&&index<states.size())
+		if (states.size()>0&&index>=0&&index<states.size())
 			states.get(states.size()-1).updateGraph(var, index);
 	}
 	
@@ -94,7 +103,6 @@ public class EvalVisitorGUI extends EvalVisitor {
 	}
 
 	public Value visitRvalueArrayIndexAssign(tfgParser.RvalueArrayIndexAssignContext ctx) {
-		//System.out.println(ctx.start.getLine()+"\t"+ctx.l.getText()+"["+ctx.index.getText()+"]"+"\tRvalueArrayIndexAssign");
 		String line = super.visit(ctx.l)+"["+super.visit(ctx.index)+"]"+ctx.operators().getText()+super.visit(ctx.newValue);
 
 		states.add(new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek()));
@@ -117,9 +125,14 @@ public class EvalVisitorGUI extends EvalVisitor {
 			while (condition.asBoolean()){
 				this.visit(ctx.exprWhile);
 				condition = this.visit(ctx.condition);
+				if (!condition.isBoolean()){
+					handleError("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
+				}
 				line = ctx.WHILE()+"("+getStringLine(ctx.rvalue().children)+")";
 				states.add(new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek()));
 			}
+		}else{
+			handleError("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
 		}
 		return Value.VOID;
 	}

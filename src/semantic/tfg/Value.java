@@ -39,7 +39,8 @@ public class Value {
 		return (ArrayList<Value>) value;
 	}
 	public String getValClass(){
-		return value.getClass().toString();
+		String [] className = value.getClass().toString().split("\\.");
+		return className[className.length-1];
 	}
 
 	public boolean isString() {

@@ -17,9 +17,9 @@ function_definition_header: DEF id=IDENTIFICADOR PARENTESISABIERTO param=functio
  
 function_definition_params: (IDENTIFICADOR COMA)* IDENTIFICADOR;
 
-function_definition_body : expression_list return_statement?;
+function_definition_body : expr=expression_list ret=return_statement? #functionDefBody;
 
-return_statement: RETURN rvalue CRLF;
+return_statement: RETURN ret=rvalue CRLF #returnStatement;
  
 function_call : PRINT PARENTESISABIERTO rvalue PARENTESISCERRADO # function_call_print
 			  | SIZE PARENTESISABIERTO rvalue PARENTESISCERRADO # function_call_size
@@ -53,7 +53,7 @@ array_definition_elements: (rvalue COMA)* rvalue;
 lvalue: IDENTIFICADOR  	#lvaluelocal
 		|ID_GLOBAL      #lvalueglobal
 		;
- 
+
 rvalue: 
 	lvalue	#rvalueLvalue
 	|PARENTESISABIERTO val=rvalue PARENTESISCERRADO	#rvalueParenthesis

@@ -1,0 +1,45 @@
+function sort(v)
+	quicksort(v,0,size(v)-1)
+end
+
+function quicksort(v, li,ls)
+	if (li<ls)
+		pos = divide(v,li,ls)
+		quicksort (v, li, pos-1)
+		quicksort (v, pos+1, ls)
+	end
+end
+
+function divide(v, li, ls)
+	pivot = v[li]
+	left = li+1
+	right = ls
+	while ((left<right) and (v[left]<=pivot))
+		left+=1
+	end
+	while (v[right]>pivot) 
+		right-=1
+	end
+	while (left<right)
+		swap (v,left,right)
+		left+=1
+		while (v[left]<=pivot)
+			left+=1
+		end
+		right-=1
+		while (v[right]>pivot)
+			right-=1
+		end
+	end
+	swap (v,li,right)
+	return right
+end
+
+function swap(v,pos1,pos2)
+	aux=v[pos1]
+	v[pos1]=v[pos2]
+	v[pos2]=aux
+end
+
+list=[3,4,5,2,6,1,5]
+sort(list)

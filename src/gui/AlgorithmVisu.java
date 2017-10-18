@@ -30,19 +30,24 @@ import javax.swing.Timer;
 import javax.swing.JTextArea;
 import javax.swing.JLabel;
 import java.awt.event.ActionListener;
-import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.ListIterator;
 import java.util.Map.Entry;
 import java.util.Set;
 import java.awt.event.ActionEvent;
-import java.awt.FlowLayout;
 import java.awt.GridBagLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+import javax.swing.JSlider;
+import javax.swing.border.TitledBorder;
+import javax.swing.event.ChangeListener;
+import javax.swing.event.ChangeEvent;
 
 public class AlgorithmVisu extends JFrame {
 	
-	private final int TIMER_SPEED = 500;
+	private final int TIMER_DEFAULT_SPEED = -500;
+	private final int TIMER_MIN_SPEED = -1000;
+	private final int TIMER_MAX_SPEED = -10;
 	
 	private JPanel contentPane;
 	private JSplitPane splitAlgoMenu;
@@ -68,6 +73,8 @@ public class AlgorithmVisu extends JFrame {
 	private JScrollPane scrollStack;
 	private StackPanel pnlStack;
 	private JFrame parent;
+	private JPanel panel_1;
+	private JSlider slider;
 	
 	public AlgorithmVisu(Algorithm algorithm, JFrame parent) {
 		this.parent = parent;
@@ -119,33 +126,51 @@ public class AlgorithmVisu extends JFrame {
 		
 		panel = new JPanel();
 		panelAlgo.add(panel, BorderLayout.SOUTH);
+		panel.setLayout(new BorderLayout(0, 0));
+		
+		panel_1 = new JPanel();
+		panel.add(panel_1, BorderLayout.NORTH);
 		
 		btnPlay = new JButton("Play");
-		btnPlay.addActionListener(new BtnPlayActionListener());
-		panel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
-		panel.add(btnPlay);
+		panel_1.add(btnPlay);
 		
 		btnStop = new JButton("Stop");
-		btnStop.addActionListener(new BtnStopActionListener());
-		panel.add(btnStop);
-		
-		btnPause = new JButton("Pause");
-		btnPause.addActionListener(new BtnPauseActionListener());
+		panel_1.add(btnStop);
 		
 		btnBackward = new JButton("Backward");
+		panel_1.add(btnBackward);
 		btnBackward.setEnabled(false);
-		btnBackward.addActionListener(new BtnBackwardActionListener());
-		panel.add(btnBackward);
-		panel.add(btnPause);
+		
+		btnPause = new JButton("Pause");
+		panel_1.add(btnPause);
 		
 		btnForward = new JButton("Forward");
+		panel_1.add(btnForward);
+		
+		slider = new JSlider();
+		slider.setMinimum(TIMER_MIN_SPEED);
+		slider.setMaximum(TIMER_MAX_SPEED);
+		slider.setValue(TIMER_DEFAULT_SPEED);
+		slider.addChangeListener(new SliderChangeListener());
+		slider.setBorder(new TitledBorder(null, "Speed", TitledBorder.LEADING, TitledBorder.TOP, null, null));
+		
+		Hashtable<Integer, JLabel> labelTable = new Hashtable<Integer, JLabel>();
+		labelTable.put( new Integer(TIMER_MIN_SPEED), new JLabel("Slow") );
+		labelTable.put( new Integer(TIMER_MAX_SPEED), new JLabel("Fast") );
+		
+		slider.setLabelTable( labelTable );
+		slider.setPaintLabels(true);
+		
+		panel.add(slider, BorderLayout.SOUTH);
 		btnForward.addActionListener(new BtnStepByStepActionListener());
-		panel.add(btnForward);
+		btnPause.addActionListener(new BtnPauseActionListener());
+		btnBackward.addActionListener(new BtnBackwardActionListener());
+		btnStop.addActionListener(new BtnStopActionListener());
+		btnPlay.addActionListener(new BtnPlayActionListener());
 		
 		algoText.setText(algorithm.getAlgorithm());
 		
-		timerVisualization = new Timer(TIMER_SPEED, new BtnPlayTimerActionListener ());
-		
+		timerVisualization = new Timer(-TIMER_DEFAULT_SPEED, new BtnPlayTimerActionListener ());
 	}
 	
 	public void autoButtons(){
@@ -206,6 +231,18 @@ public class AlgorithmVisu extends JFrame {
 		pnlStack.repaint();
 	}
 	
+	public void autoLine(State s){
+		try {
+			algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
+			algoText.setCurrentLineHighlightColor(s.getColor());
+		} catch (BadLocationException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+		textAreaDebug.setText(textAreaDebug.getText()+s+"\n");
+		stackVisualization(s);
+	}
+	
 	private class BtnPlayActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent arg0) {
 			parseAlgorithm();
@@ -224,19 +261,12 @@ public class AlgorithmVisu extends JFrame {
 			mode = Mode.STEP;
 			autoButtons();
 			if (states!=null&&states.hasNext()){
-	    		s = states.next();
-	    		try {
-					algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
-				} catch (BadLocationException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-	    		textAreaDebug.setText(textAreaDebug.getText()+s+"\n");
-	    		stackVisualization(s);
-	    	}else{
-	    		mode = Mode.DEFAULT;
-	    		autoButtons();
-	    	}
+				s = states.next();
+				autoLine(s);
+			}else{
+				mode = Mode.DEFAULT;
+				autoButtons();
+			}
 		}
 	}
 	private class BtnStopActionListener implements ActionListener {
@@ -261,19 +291,12 @@ public class AlgorithmVisu extends JFrame {
 			mode = Mode.STEP;
 			autoButtons();
 			if (states!=null&&states.hasPrevious()){
-	    		s = states.previous();
-	    		try {
-					algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
-				} catch (BadLocationException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-	    		textAreaDebug.setText(textAreaDebug.getText()+s+"\n");
-	    		stackVisualization(s);
-	    	}else{
-	    		mode = Mode.DEFAULT;
-	    		autoButtons();
-	    	}
+				s = states.previous();
+				autoLine(s);
+			}else{
+				mode = Mode.DEFAULT;
+				autoButtons();
+			}
 		}
 	}
 
@@ -282,25 +305,27 @@ public class AlgorithmVisu extends JFrame {
 			State s = null;
 			if (states!=null&&states.hasNext()) {
 				s = states.next();
-				try {
-					algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
-				} catch (BadLocationException e1) {
-					// TODO Auto-generated catch block
-					e1.printStackTrace();
-				}
-				textAreaDebug.setText(textAreaDebug.getText() + s + "\n");
-				stackVisualization(s);
+				autoLine(s);
 			} else {
 				mode = Mode.DEFAULT;
 				autoButtons();
 				timerVisualization.stop();
 			}
-
+		
 		}
 	}
 	private class ThisWindowListener extends WindowAdapter {
 		public void windowClosing(WindowEvent arg0) {
 			parent.setVisible(true);
+		}
+	}
+	private class SliderChangeListener implements ChangeListener {
+		public void stateChanged(ChangeEvent e) {
+			JSlider source = (JSlider) e.getSource();
+			if (!source.getValueIsAdjusting()) {
+				int fps = (int)source.getValue();
+				timerVisualization.setDelay(-fps);
+			}
 		}
 	}
 	

@@ -1,5 +1,6 @@
 package semantic.tfgGUI;
 
+import java.awt.Color;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
@@ -14,6 +15,7 @@ public class State {
 	private final String SPACE_WIDTH = "   ";
 	private int nline;
 	private String sline="";
+	private Color cline = new Color(255,255,170);
 	private Map<String, Value> variables;
 	private Map<String, GraphTFG> graph_list;
 	
@@ -34,6 +36,15 @@ public class State {
 		}
 	}
 	
+	public void setColorBool(boolean colorBool){
+		if (colorBool) this.cline=new Color(144, 238, 144);
+		else this.cline=new Color(255,193,193);
+	}
+	
+	public Color getColor(){
+		return this.cline;
+	}
+	
 	public int getNline() {
 		return nline;
 	}
@@ -48,6 +59,14 @@ public class State {
 	public Map<String, GraphTFG> getGraphs(){
 		return graph_list;
 	}
+	
+	public void setSline(String sline, int ntabs) {
+		this.sline="";
+		for (int i=0;i<ntabs;i++)
+			this.sline+=SPACE_WIDTH;
+		this.sline+=sline;
+	}
+
 	public void updateGraph(String id, int index){
 		mxGraphModel a = null;
 		if (graph_list.get(id) != null){

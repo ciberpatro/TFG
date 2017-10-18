@@ -410,6 +410,19 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		}else{/*TO-DO Comprobar si cumple con los mismos parámetros que la función*/}
 		return ret;
 	}
+	public Value visitFunctionDefBody(tfgParser.FunctionDefBodyContext ctx) {
+		Value ret = Value.VOID;
+		this.visit(ctx.expr);
+		if (ctx.ret!=null){
+			ret=this.visit(ctx.ret);
+		}
+		return ret;
+	}
+	
+	/*Return statement*/
+	public Value visitReturnStatement(tfgParser.ReturnStatementContext ctx) {
+		return this.visit(ctx.ret);
+	}
 	/*If statement*/
 	public Value visitIfStatement(tfgParser.IfStatementContext ctx) {
 		Value condition=this.visit(ctx.condition);
@@ -425,7 +438,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		}else{
 			handleError("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
 		}
-		return Value.VOID;
+		return condition;
 	}
 	
 	/*ElseIf statement*/

@@ -9,6 +9,7 @@ expression : function_definition # expression_function_definition
 			|rvalue # expression_rvalue
 			|for_statement # expression_for
 			|while_statement # expression_while
+			|do_while_statement #expression_do_while
 			;
 
 function_definition: header=function_definition_header body=function_definition_body END;
@@ -42,6 +43,8 @@ for_statement : FOR element=lvalue IN iterator=rvalue CRLF exprFor=expression_li
 
 while_statement : WHILE PARENTESISABIERTO condition=rvalue PARENTESISCERRADO CRLF exprWhile=expression_list END #whileStatement;
 
+do_while_statement: DO CRLF expr=expression_list WHILE PARENTESISABIERTO condition=rvalue PARENTESISCERRADO #doWhileStatement;
+
 assignment: l=lvalue op=operators r=rvalue #assignmentStatement;
 
 operators: IGUAL | MASIGUAL | MENOSIGUAL | MULTIGUAL | DIVISIONIGUAL | PORCENTAJEIGUAL | ELEVADOIGUAL;
@@ -67,15 +70,15 @@ rvalue:
 	|assignment	#rvalueregla9
 	|array_definition	#rvalueArrayDefinition
 	|l=rvalue CORCHETEABIERTO index=rvalue CORCHETECERRADO operators newValue=rvalue #rvalueArrayIndexAssign
-	|function_call	#rvalueFunction_call
 	|op=(SUMA | RESTA) r=rvalue #rvalueUnaryOp
 	|r=rvalue op=ELEVADO r1=rvalue	#rvalueOp0
 	|r=rvalue op=(MULT | DIVISION | PORCENTAJE) r1=rvalue	#rvalueOp1
 	|r=rvalue op=(SUMA | RESTA) r1=rvalue	#rvalueop2
 	|op=COMPARADORBOL2 r=rvalue	#rvalueBoolean2
-	|r=rvalue op=COMPARADORBOL1 r1=rvalue	#rvalueBoolean1
 	|r=rvalue op=COMPARADORES1 r1=rvalue	#rvalueComp1
 	|r=rvalue op=COMPARADORES2 r1=rvalue	#rvalueComp2
+	|r=rvalue op=COMPARADORBOL1 r1=rvalue	#rvalueBoolean1
+	|function_call	#rvalueFunction_call
 	;
 
 ENTERO : [0-9]+ ;

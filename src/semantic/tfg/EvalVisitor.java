@@ -20,7 +20,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		variableStack.push(new HashMap<String, Value>());
 	}
 	
-	protected void handleError(String error, int line){
+	protected void errorHandler(String error, int line){
 		System.out.println(error+"\nLine: "+line);
 		throw new ParseCancellationException();
 	}
@@ -48,7 +48,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		try{
 			val=new Value(Integer.valueOf(ctx.getText()));
 		}catch (NumberFormatException e){
-			handleError("The number "+ctx.getText()+" is out of bounds.\n"+Integer.MIN_VALUE+" / "+Integer.MAX_VALUE, ctx.start.getLine());
+			errorHandler("The number "+ctx.getText()+" is out of bounds.\n"+Integer.MIN_VALUE+" / "+Integer.MAX_VALUE, ctx.start.getLine());
 		}
 		return val;
 	}
@@ -58,7 +58,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		try{
 			val=new Value(Double.valueOf(ctx.getText()));
 		}catch (NumberFormatException e){
-			handleError("The number "+ctx.getText()+" is out of bounds.\n"+Double.MIN_VALUE+" / "+Double.MAX_VALUE, ctx.start.getLine());
+			errorHandler("The number "+ctx.getText()+" is out of bounds.\n"+Double.MIN_VALUE+" / "+Double.MAX_VALUE, ctx.start.getLine());
 		}
 		return val;
 	}
@@ -75,7 +75,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		String id = this.visit(ctx.lvalue()).asString();
 		Value value = getVariableValue(id);
 		if (value.equals(Value.VOID)){
-			handleError("The variable "+id+" must be initialized.",ctx.start.getLine());
+			errorHandler("The variable "+id+" must be initialized.",ctx.start.getLine());
 		}
 		return value;
 	}
@@ -116,7 +116,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 				r=new Value(Double.valueOf(ctx.op.getText()+r.asDouble()));
 			}
 		}else{
-			handleError("The value: "+r.getValClass()+" is not a number.", ctx.start.getLine());
+			errorHandler("The value: "+r.getValClass()+" is not a number.", ctx.start.getLine());
 		}
 		return r;
 	}
@@ -133,7 +133,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 				break;
 			}
 		}else{
-			handleError("The value: "+r.getValClass()+" is not boolean.",ctx.start.getLine());
+			errorHandler("The value: "+r.getValClass()+" is not boolean.",ctx.start.getLine());
 		}
 		return new Value(result); 
 	}
@@ -156,10 +156,10 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 			}
 		}else{
 			if (r.isBoolean()^r1.isBoolean()){
-				handleError("The value: " + (r.isBoolean()? r1.getValClass() : r.getValClass())+
+				errorHandler("The value: " + (r.isBoolean()? r1.getValClass() : r.getValClass())+
 							" is not boolean", ctx.start.getLine());
 			}else{
-				handleError("Neither of the values are boolean.\n"+
+				errorHandler("Neither of the values are boolean.\n"+
 							"Value 1: "+r.getValClass() + 
 							"\nValue 2: " + r1.getValClass(), ctx.start.getLine());
 			}
@@ -214,7 +214,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 						result=new Value(r.asDouble()/r1.asDouble());
 					}
 				}else{
-					handleError("Division by zero",line);
+					errorHandler("Division by zero",line);
 				}
 			break;
 			case "%":
@@ -225,12 +225,12 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 						result=new Value(r.asDouble()%r1.asDouble());
 					}
 				}else{
-					handleError("Division by zero",line);
+					errorHandler("Division by zero",line);
 				}
 			break;
 		}
 		if (result==Value.VOID){
-			handleError("The operator "+ op + " is incompatible with the values: "+r.getValClass()+" and "+r1.getValClass(), line);
+			errorHandler("The operator "+ op + " is incompatible with the values: "+r.getValClass()+" and "+r1.getValClass(), line);
 		}
 		return result;
 	}
@@ -272,7 +272,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 			break;
 			}
 		}else{
-			handleError("The values " +r.getValClass() +" and "+ r1.getValClass() +" are unorderable types",ctx.start.getLine());
+			errorHandler("The values " +r.getValClass() +" and "+ r1.getValClass() +" are unorderable types",ctx.start.getLine());
 		}
 		return result;
 	}
@@ -352,13 +352,13 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 			if (index<matrix.size()&&index>=0)
 				vfinal=matrix.get(index);
 			else {
-				handleError(String.format("Index Error.\n"
+				errorHandler(String.format("Index Error.\n"
 						+ "Index: %d\n"
 						+ "Matrix: %s Size: %d",
 						index, matrix, matrix.size()), ctx.start.getLine());
 			}
 		}else
-			handleError("The value "+ vmatrix.getValClass() +" is not iterable",ctx.start.getLine());
+			errorHandler("The value "+ vmatrix.getValClass() +" is not iterable",ctx.start.getLine());
 		return vfinal; 
 	}
 
@@ -436,7 +436,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 			}
 			if (!condition.asBoolean()&&ctx.exprElse != null) this.visit(ctx.exprElse);
 		}else{
-			handleError("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
+			errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
 		}
 		return condition;
 	}
@@ -447,7 +447,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		if (condition.isBoolean()){
 			if (condition.asBoolean()) this.visit(ctx.expr);
 		}else{
-			handleError("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
+			errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
 		}
 		return condition; 
 	}
@@ -462,7 +462,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 				this.visit(ctx.exprFor);
 			}
 		}else{
-			handleError("The value "+ iter.getValClass() +" is not iterable",ctx.start.getLine());
+			errorHandler("The value "+ iter.getValClass() +" is not iterable",ctx.start.getLine());
 		}
 		return Value.VOID;
 	}
@@ -478,12 +478,12 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 				this.visit(ctx.rightAssignment);
 				cond = this.visit(ctx.condition);
 				if (!cond.isBoolean()){
-					handleError("The condition must be a boolean. Value: "+cond.getValClass(),ctx.start.getLine());
+					errorHandler("The condition must be a boolean. Value: "+cond.getValClass(),ctx.start.getLine());
 				}
 				condition = cond.asBoolean();
 			}
 		}else{
-			handleError("The condition must be a boolean. Value: "+cond.getValClass(),ctx.start.getLine());
+			errorHandler("The condition must be a boolean. Value: "+cond.getValClass(),ctx.start.getLine());
 		}
 		return Value.VOID;
 	}
@@ -496,12 +496,24 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 				this.visit(ctx.exprWhile);
 				condition = this.visit(ctx.condition);
 				if (!condition.isBoolean()){
-					handleError("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
+					errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
 				}
 			}
 		}else{
-			handleError("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
+			errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
 		}
 		return Value.VOID;
+	}
+	
+	public Value visitDoWhileStatement(tfgParser.DoWhileStatementContext ctx) {
+		Value condition = null;
+		do{
+			this.visit(ctx.expr);
+			condition=this.visit(ctx.condition);
+			if (!condition.isBoolean())
+				errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
+		}while(condition.asBoolean());
+		
+		return condition;
 	}
 }

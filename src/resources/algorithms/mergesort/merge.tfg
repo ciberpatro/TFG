@@ -16,7 +16,7 @@ function mezcla(v,li,med,ls)
 	rec1 = li
 	rec2 = med+1
 	w = copy(v)
-	while ((rec1 <= med) and (rec2 <= ls))
+	while (rec1 <= med and rec2 <= ls)
 		if (v[rec1] < v[rec2])
 			w[rec] = v[rec1]
 			rec1+=1

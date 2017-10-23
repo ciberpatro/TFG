@@ -3,8 +3,6 @@ package semantic.tfgGUI;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.swing.JOptionPane;
-
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -43,11 +41,9 @@ public class EvalVisitorGUI extends EvalVisitor {
 		}
 		return rvalue;
 	}
-	protected void handleError(String error, int line) {
-		JOptionPane.showMessageDialog(null,
-				error + "\nLine: "+line,
-				"Error",
-				JOptionPane.ERROR_MESSAGE);
+	protected void errorHandler(String error, int line) {
+		State err = states.get(states.size()-1);
+		err.setError(error);
 		throw new ParseCancellationException();
 	}
 	private void setCellColor(String var, int index){
@@ -70,30 +66,36 @@ public class EvalVisitorGUI extends EvalVisitor {
 	}
 	
 	public Value visitAssignmentStatement(tfgParser.AssignmentStatementContext ctx) {
+		int charPos = ctx.start.getCharPositionInLine();
 		String line = "";
-		State st = new State (ctx.start.getLine(), ctx.start.getCharPositionInLine(),line,variableStack.peek());
-		Value value = Value.VOID;
-		
+		Value value = null;
+		State st = null;
+		tfgParser.ForClassicStatementContext ctxFor = null;
+		if (ctx.getParent() instanceof tfgParser.ForClassicStatementContext){
+			ctxFor = (ForClassicStatementContext) ctx.getParent();
+			charPos = ctxFor.start.getCharPositionInLine();
+		}
+		st = new State (ctx.start.getLine(), charPos,line,variableStack.peek());
 		states.add(st);
-		value= super.visitAssignmentStatement(ctx);
 		
-		line+=ctx.l.getText() + "=";
+		line=ctx.l.getText() + "=";
+		value = super.visitAssignmentStatement(ctx);
 		
-		if (ctx.r.children.get(0) instanceof tfgParser.Function_call_idContext)
-			line += getStringLine(ctx.r.children);
-		else
-			line += value;
+		if (ctx.r.children.get(0) instanceof tfgParser.Function_call_idContext){
+			st.setSline(line+getStringLine(ctx.r.children));
+			st = new State (ctx.start.getLine(), charPos,"",variableStack.peek());
+			states.add(st);
+		}
 		
 		if (states.size()>=0){
 			if (!(ctx.getParent() instanceof tfgParser.ForClassicStatementContext)){
-				st.setSline(line, ctx.start.getCharPositionInLine());
+				st.setSline(line+value);
 			}else{
-				tfgParser.ForClassicStatementContext ctxFor= (ForClassicStatementContext) ctx.getParent();
 				line = ctxFor.FOR().getText() + "("
 						+getStringLine(ctxFor.leftAssignment.children)+";"
 						+getStringLine(ctxFor.condition.children)+";"
 						+getStringLine(ctxFor.rightAssignment.children)+")";
-				st.setSline(line,ctxFor.start.getCharPositionInLine());
+				st.setSline(line);
 				Value aux = this.visit(ctxFor.condition);
 				if (aux.isBoolean()) st.setColorBool(aux.asBoolean());
 			}
@@ -135,7 +137,7 @@ public class EvalVisitorGUI extends EvalVisitor {
 		String line = "";
 		states.add(st);
 		line = super.visit(ctx.l)+"["+super.visit(ctx.index)+"]"+ctx.operators().getText()+super.visit(ctx.newValue);
-		st.setSline(line, ctx.start.getCharPositionInLine());
+		st.setSline(line);
 		Value val = super.visitRvalueArrayIndexAssign(ctx);
 		setCellColor(ctx.l.getText(), super.visit(ctx.index).asInteger());
 		return val;
@@ -156,7 +158,7 @@ public class EvalVisitorGUI extends EvalVisitor {
 		
 		condition = this.visit(ctx.condition);
 		line = ctx.WHILE()+"("+getStringLine(ctx.rvalue().children)+")";
-		st.setSline(line, ctx.start.getCharPositionInLine());
+		st.setSline(line);
 		if (condition.isBoolean()){
 			st.setColorBool(condition.asBoolean());
 			while (condition.asBoolean()){
@@ -165,16 +167,33 @@ public class EvalVisitorGUI extends EvalVisitor {
 				states.add(st);
 				condition = this.visit(ctx.condition);
 				if (!condition.isBoolean()){
-					handleError("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
+					errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
 				}
 				line = ctx.WHILE()+"("+getStringLine(ctx.rvalue().children)+")";
-				st.setSline(line, ctx.start.getCharPositionInLine());
+				st.setSline(line);
 				st.setColorBool(condition.asBoolean());
 			}
 		}else{
-			states.remove(st);
-			handleError("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
+			errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
 		}
+		return Value.VOID;
+	}
+	public Value visitDoWhileStatement(tfgParser.DoWhileStatementContext ctx) {
+		String line=ctx.DO().getText();
+		State st = null;
+		Value condition = null;
+		do{
+			st=new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek());
+			states.add(st);
+			this.visit(ctx.expr);
+			condition=this.visit(ctx.condition);
+			if (!condition.isBoolean())
+				errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
+			st=new State (ctx.stop.getLine(),ctx.start.getCharPositionInLine(),ctx.WHILE()+"("+getStringLine(ctx.rvalue().children)+")",variableStack.peek());
+			st.setColorBool(condition.asBoolean());
+			states.add(st);
+		}while(condition.asBoolean());
+		
 		return Value.VOID;
 	}
 }

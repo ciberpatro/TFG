@@ -14,7 +14,7 @@ function divide(v, li, ls)
 	pivot = v[li]
 	left = li+1
 	right = ls
-	while ((left<right) and (v[left]<=pivot))
+	while (left<right and v[left]<=pivot)
 		left+=1
 	end
 	while (v[right]>pivot) 
@@ -22,14 +22,12 @@ function divide(v, li, ls)
 	end
 	while (left<right)
 		swap (v,left,right)
-		left+=1
-		while (v[left]<=pivot)
+		do
 			left+=1
-		end
-		right-=1
-		while (v[right]>pivot)
+		while (v[left]<=pivot)
+		do
 			right-=1
-		end
+		while (v[right]>pivot)
 	end
 	swap (v,li,right)
 	return right

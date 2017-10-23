@@ -29,7 +29,10 @@ import javax.swing.JScrollPane;
 import javax.swing.Timer;
 import javax.swing.JTextArea;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+
 import java.awt.event.ActionListener;
+import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.ListIterator;
 import java.util.Map.Entry;
@@ -207,10 +210,19 @@ public class AlgorithmVisu extends JFrame {
 				visitor.visit(tree);
 				states = visitor.getStates().listIterator();
 			}catch (ParseCancellationException e){
-				states = null;
+				State err = visitor.getStates().get(visitor.getStates().size()-1);
+				showError(err);
+				states = visitor.getStates().listIterator();
 			}
 			textAreaDebug.setText("");
 		}
+	}
+	
+	public void showError(State err){
+		JOptionPane.showMessageDialog(this,
+				err.getSline() + "\nLine: "+ err.getNline(),
+				"Error",
+				JOptionPane.ERROR_MESSAGE);
 	}
 	
 	public void stackVisualization(State s){
@@ -233,8 +245,12 @@ public class AlgorithmVisu extends JFrame {
 	
 	public void autoLine(State s){
 		try {
-			algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
-			algoText.setCurrentLineHighlightColor(s.getColor());
+			if (s.isError()){
+				showError(s);
+			}else{
+				algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
+				algoText.setCurrentLineHighlightColor(s.getColor());
+			}
 		} catch (BadLocationException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();

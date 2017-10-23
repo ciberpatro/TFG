@@ -14,6 +14,7 @@ import semantic.tfg.Value;
 public class State {
 	private final String SPACE_WIDTH = "   ";
 	private int nline;
+	private boolean isError=false;
 	private String sline="";
 	private Color cline = new Color(255,255,170);
 	private Map<String, Value> variables;
@@ -60,10 +61,7 @@ public class State {
 		return graph_list;
 	}
 	
-	public void setSline(String sline, int ntabs) {
-		this.sline="";
-		for (int i=0;i<ntabs;i++)
-			this.sline+=SPACE_WIDTH;
+	public void setSline(String sline) {
 		this.sline+=sline;
 	}
 
@@ -76,5 +74,13 @@ public class State {
 	}
 	public String toString(){
 		return sline;
+	}
+
+	public void setError(String error) {
+		this.sline=error;
+		this.isError=true;
+	}
+	public boolean isError(){
+		return this.isError;
 	}
 }

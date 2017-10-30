@@ -361,19 +361,6 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 			errorHandler("The value "+ vmatrix.getValClass() +" is not iterable",ctx.start.getLine());
 		return vfinal; 
 	}
-
-	public Value visitRvalueArrayDefRange(tfgParser.RvalueArrayDefRangeContext ctx) {
-		Value from = this.visit(ctx.from);
-		Value to = this.visit(ctx.to);
-		ArrayList<Value> aux=new ArrayList<Value>();
-		Value list=new Value(aux);
-		if (from.isInteger() && to.isInteger()){
-			for (int i=from.asInteger();i<to.asInteger();i++){
-				aux.add(new Value(i));
-			}	
-		}
-		return list;
-	}
 	
 	public Value visitRvalueArrayIndexAssign(tfgParser.RvalueArrayIndexAssignContext ctx) {
 		Value val = this.visit(ctx.l);
@@ -450,21 +437,6 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 			errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
 		}
 		return condition; 
-	}
-	/*For statement*/
-	public Value visitForInStatement(tfgParser.ForInStatementContext ctx) {
-		String id = this.visit(ctx.element).asString();
-		Map<String, Value> variables = variableStack.peek();
-		Value iter = this.visit(ctx.iterator);
-		if (iter.isList()){
-			for (int i=0;i<iter.asList().size();i++){
-				variables.put(id, iter.asList().get(i));
-				this.visit(ctx.exprFor);
-			}
-		}else{
-			errorHandler("The value "+ iter.getValClass() +" is not iterable",ctx.start.getLine());
-		}
-		return Value.VOID;
 	}
 	
 	public Value visitForClassicStatement(tfgParser.ForClassicStatementContext ctx) {

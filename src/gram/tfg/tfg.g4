@@ -12,130 +12,112 @@ expression : function_definition # expression_function_definition
 			|do_while_statement #expression_do_while
 			;
 
-function_definition: header=function_definition_header body=function_definition_body END;
+function_definition : header=function_definition_header body=function_definition_body END;
 
-function_definition_header: DEF id=IDENTIFICADOR PARENTESISABIERTO param=function_definition_params? PARENTESISCERRADO CRLF;
+function_definition_header : DEF id=ID ROUNDBRACKETOPEN param=function_definition_params? ROUNDBRACKETCLOSED CRLF;
  
-function_definition_params: (IDENTIFICADOR COMA)* IDENTIFICADOR;
+function_definition_params : (ID COMMA)* ID;
 
 function_definition_body : expr=expression_list ret=return_statement? #functionDefBody;
 
 return_statement: RETURN ret=rvalue CRLF #returnStatement;
  
-function_call : PRINT PARENTESISABIERTO rvalue PARENTESISCERRADO # function_call_print
-			  | SIZE PARENTESISABIERTO rvalue PARENTESISCERRADO # function_call_size
-			  | COPY PARENTESISABIERTO val=rvalue PARENTESISCERRADO # function_call_copy
-			  | id=IDENTIFICADOR PARENTESISABIERTO param=function_call_param_list? PARENTESISCERRADO # function_call_id
+function_call : PRINT ROUNDBRACKETOPEN rvalue ROUNDBRACKETCLOSED # function_call_print
+			  | SIZE ROUNDBRACKETOPEN rvalue ROUNDBRACKETCLOSED # function_call_size
+			  | COPY ROUNDBRACKETOPEN val=rvalue ROUNDBRACKETCLOSED # function_call_copy
+			  | id=ID ROUNDBRACKETOPEN param=function_call_param_list? ROUNDBRACKETCLOSED # function_call_id
 			  ;
 
-function_call_param_list: (rvalue COMA)* rvalue;
+function_call_param_list : (rvalue COMMA)* rvalue;
 
  
-if_statement: IF PARENTESISABIERTO condition=rvalue PARENTESISCERRADO CRLF exprIf=expression_list exprElseIf=elseIf_statement* exprElse=else_statement? END #ifStatement;
+if_statement : IF ROUNDBRACKETOPEN condition=rvalue ROUNDBRACKETCLOSED CRLF exprIf=expression_list exprElseIf=elseIf_statement* exprElse=else_statement? END #ifStatement;
 
-elseIf_statement: ELSE IF PARENTESISABIERTO condition=rvalue PARENTESISCERRADO CRLF expr=expression_list #elseIfStatement;
+elseIf_statement : ELSE IF ROUNDBRACKETOPEN condition=rvalue ROUNDBRACKETCLOSED CRLF expr=expression_list #elseIfStatement;
 
-else_statement:ELSE CRLF expr=expression_list #elseStatement;
+else_statement : ELSE CRLF expr=expression_list #elseStatement;
 
-for_statement : FOR element=lvalue IN iterator=rvalue CRLF exprFor=expression_list END #forInStatement
-			  | FOR PARENTESISABIERTO leftAssignment=assignment PUNTOYCOMA condition=rvalue PUNTOYCOMA rightAssignment=assignment PARENTESISCERRADO CRLF exprFor=expression_list END #forClassicStatement
-			  ;
+for_statement : FOR ROUNDBRACKETOPEN leftAssignment=assignment SEMICOLON condition=rvalue SEMICOLON rightAssignment=assignment ROUNDBRACKETCLOSED CRLF exprFor=expression_list END #forClassicStatement;
 
-while_statement : WHILE PARENTESISABIERTO condition=rvalue PARENTESISCERRADO CRLF exprWhile=expression_list END #whileStatement;
+while_statement : WHILE ROUNDBRACKETOPEN condition=rvalue ROUNDBRACKETCLOSED CRLF exprWhile=expression_list END #whileStatement;
 
-do_while_statement: DO CRLF expr=expression_list WHILE PARENTESISABIERTO condition=rvalue PARENTESISCERRADO #doWhileStatement;
+do_while_statement : DO CRLF expr=expression_list WHILE ROUNDBRACKETOPEN condition=rvalue ROUNDBRACKETCLOSED #doWhileStatement;
 
-assignment: l=lvalue op=operators r=rvalue #assignmentStatement;
+assignment : l=lvalue op=operators r=rvalue #assignmentStatement;
 
-operators: IGUAL | MASIGUAL | MENOSIGUAL | MULTIGUAL | DIVISIONIGUAL | PORCENTAJEIGUAL | ELEVADOIGUAL;
+operators : EQUALS | PLUS_EQUAL | MINUS_EQUAL | MULTI_EQUAL | DIV_EQUAL | MOD_EQUAL | POW_EQUAL;
 
-array_definition: CORCHETEABIERTO eleArray=array_definition_elements? CORCHETECERRADO;
+array_definition : SQUAREBRACKETOPEN eleArray=array_definition_elements? SQUAREBRACKETCLOSED;
 
-array_definition_elements: (rvalue COMA)* rvalue;
+array_definition_elements : (rvalue COMMA)* rvalue;
 
-lvalue: IDENTIFICADOR  	#lvaluelocal
-		|ID_GLOBAL      #lvalueglobal
-		;
+lvalue : ID	#lvaluelocal;
 
-rvalue: 
+rvalue : 
 	lvalue	#rvalueLvalue
-	|PARENTESISABIERTO val=rvalue PARENTESISCERRADO	#rvalueParenthesis
-	|CADENA	#rvalueCadena
+	|ROUNDBRACKETOPEN val=rvalue ROUNDBRACKETCLOSED	#rvalueParenthesis
+	|STRING	#rvalueCadena
 	|BOOLEAN	#rvalueBoolean
 	|FLOAT	#rvalueFloat
-	|ENTERO	#rvalueEntero
-	|NULO	#rvalueNull
-	|matrix=rvalue CORCHETEABIERTO index=rvalue CORCHETECERRADO	#rvalueArraySelection
-	|from=rvalue RANGO to=rvalue #rvalueArrayDefRange
-	|assignment	#rvalueregla9
+	|INTEGER	#rvalueEntero
+	|NULL	#rvalueNull
+	|matrix=rvalue SQUAREBRACKETOPEN index=rvalue SQUAREBRACKETCLOSED	#rvalueArraySelection
+	|assignment #rvalueAssignment
 	|array_definition	#rvalueArrayDefinition
-	|l=rvalue CORCHETEABIERTO index=rvalue CORCHETECERRADO operators newValue=rvalue #rvalueArrayIndexAssign
-	|op=(SUMA | RESTA) r=rvalue #rvalueUnaryOp
-	|r=rvalue op=ELEVADO r1=rvalue	#rvalueOp0
-	|r=rvalue op=(MULT | DIVISION | PORCENTAJE) r1=rvalue	#rvalueOp1
-	|r=rvalue op=(SUMA | RESTA) r1=rvalue	#rvalueop2
-	|op=COMPARADORBOL2 r=rvalue	#rvalueBoolean2
-	|r=rvalue op=COMPARADORES1 r1=rvalue	#rvalueComp1
-	|r=rvalue op=COMPARADORES2 r1=rvalue	#rvalueComp2
-	|r=rvalue op=COMPARADORBOL1 r1=rvalue	#rvalueBoolean1
+	|l=rvalue SQUAREBRACKETOPEN index=rvalue SQUAREBRACKETCLOSED operators newValue=rvalue #rvalueArrayIndexAssign
+	|op=(PLUS | MINUS) r=rvalue #rvalueUnaryOp
+	|r=rvalue op=POW r1=rvalue	#rvalueOp0
+	|r=rvalue op=(MULT | DIV | MOD) r1=rvalue	#rvalueOp1
+	|r=rvalue op=(PLUS | MINUS) r1=rvalue	#rvalueop2
+	|op=COMPBOOL2 r=rvalue	#rvalueBoolean2
+	|r=rvalue op=COMP1 r1=rvalue	#rvalueComp1
+	|r=rvalue op=COMP2 r1=rvalue	#rvalueComp2
+	|r=rvalue op=COMPBOOL1 r1=rvalue	#rvalueBoolean1
 	|function_call	#rvalueFunction_call
 	;
 
-ENTERO : [0-9]+ ;
+INTEGER : [0-9]+ ;
 FLOAT : [0-9]+'.'[0-9]+;
 PRINT : 'print';
 SIZE : 'size';
 COPY : 'copy';
-REQUIRE : 'require';
 END : 'end';
 DEF : 'function';
 RETURN : 'return';
 IF : 'if';
-THEN : 'then';
-BEGIN : 'begin';
 ELSE : 'else';
-CASE : 'case';
-WHEN : 'when';
-UNTIL : 'until';
 DO : 'do';
 ELSIF : 'elsif';
-UNLESS: 'unless';
 WHILE : 'while';
-RETRY : 'retry';
-BREAK : 'break';
 FOR : 'for';
-IN : 'in';
-TO : 'to';
 BOOLEAN : 'true' | 'false';
-SUMA: '+';
-RESTA: '-';
-MULT: '*';
-DIVISION: '/';
-PORCENTAJE: '%';
-ELEVADO: '**';
-COMPARADORES1: '==' | '!=';
-COMPARADORES2: '>' | '<' | '<=' | '>=';
-IGUAL: '=';
-MASIGUAL: '+=';
-MENOSIGUAL: '-=';
-MULTIGUAL: '*=';
-DIVISIONIGUAL: '/=';
-PORCENTAJEIGUAL: '%=';
-ELEVADOIGUAL: '**=';
-COMPARADORBOL1 : 'and' | '&&' | 'or' | '||';
-COMPARADORBOL2 : 'not' | '!';
-PARENTESISABIERTO : '(';
-PARENTESISCERRADO : ')';
-CORCHETEABIERTO : '[';
-CORCHETECERRADO : ']';
-NULO : 'nil';
-IDENTIFICADOR : [a-zA-Z_][a-zA-Z0-9_]*;
-ID_GLOBAL : '$' [a-zA-Z_][a-zA-Z0-9_]*;
-COMA : ',';
-PUNTOYCOMA : ';';
-RANGO : '..';
+PLUS : '+';
+MINUS : '-';
+MULT : '*';
+DIV : '/';
+MOD : '%';
+POW : '**';
+COMP1 : '==' | '!=';
+COMP2 : '>' | '<' | '<=' | '>=';
+EQUALS : '=';
+PLUS_EQUAL : '+=';
+MINUS_EQUAL : '-=';
+MULTI_EQUAL : '*=';
+DIV_EQUAL : '/=';
+MOD_EQUAL : '%=';
+POW_EQUAL : '**=';
+COMPBOOL1 : 'and' | '&&' | 'or' | '||';
+COMPBOOL2 : 'not' | '!';
+ROUNDBRACKETOPEN : '(';
+ROUNDBRACKETCLOSED : ')';
+SQUAREBRACKETOPEN : '[';
+SQUAREBRACKETCLOSED : ']';
+NULL : 'null';
+ID : [a-zA-Z_][a-zA-Z0-9_]*;
+COMMA : ',';
+SEMICOLON : ';';
 CRLF : '\n';
-COMENTARIOS : ('#' ~('\r' | '\n')* '\n' | '=begin' .*? '=end') -> skip;
-CADENA :  '"'( ESCAPEDQUOTE| ~('\n'|'\r') )*? '"'| '\''( ESCAPEDQUOTE| ~('\n'|'\r') )*? '\'';
+COMMENTS : ('#' ~('\r' | '\n')* '\n' | '=begin' .*? '=end') -> skip;
+STRING :  '"'( ESCAPEDQUOTE| ~('\n'|'\r') )*? '"'| '\''( ESCAPEDQUOTE| ~('\n'|'\r') )*? '\'';
 ESCAPEDQUOTE : '\\"';
-ESPACIOSBLANCOS : [ \t\r]+ -> skip;
+WHITE_SPACES : [ \t\r]+ -> skip;

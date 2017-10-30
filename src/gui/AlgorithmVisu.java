@@ -81,6 +81,7 @@ public class AlgorithmVisu extends JFrame {
 	
 	public AlgorithmVisu(Algorithm algorithm, JFrame parent) {
 		this.parent = parent;
+		this.setTitle(parent.getTitle()+" - "+algorithm.getName());
 		addWindowListener(new ThisWindowListener());
 		setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
 		setBounds(100, 100, 864, 428);

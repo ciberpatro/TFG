@@ -29,7 +29,9 @@ import java.awt.event.ActionEvent;
 import javax.swing.ScrollPaneConstants;
 
 public class MainMenu extends JFrame {
-
+	
+	private final String title = "VESortAl";
+	
 	private JPanel contentPane;
 	private JPanel panel;
 	private JComboBox<Vector<Algorithm>> cbAlgorithms;
@@ -43,6 +45,7 @@ public class MainMenu extends JFrame {
 	 */
 	public MainMenu() {
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setTitle(title);
 		setBounds(100, 100, 450, 300);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));

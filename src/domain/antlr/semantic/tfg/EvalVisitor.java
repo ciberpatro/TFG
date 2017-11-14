@@ -1,27 +1,29 @@
-package semantic.tfg;
+package domain.antlr.semantic.tfg;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.Stack;
 
-import gram.tfg.*;
+import domain.antlr.gram.tfg.*;
+import domain.antlr.gram.tfg.tfgBaseVisitor;
 
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.*;
 
 public class EvalVisitor extends tfgBaseVisitor<Value> {
-	private Map<String,tfgParser.Function_definitionContext> functions;
+	private Stack<Map<String,tfgParser.Function_definitionContext>> functions;
 	protected Stack<Map<String, Value>> variableStack;
 	
 	public EvalVisitor(){
-		functions = new HashMap<String,tfgParser.Function_definitionContext>(); 
+		functions = new Stack<Map<String,tfgParser.Function_definitionContext>>();
+		functions.push(new HashMap<String,tfgParser.Function_definitionContext>());
 		variableStack = new Stack<Map<String, Value>>();
 		variableStack.push(new HashMap<String, Value>());
 	}
 	
 	protected void errorHandler(String error, int line){
-		System.out.println(error+"\nLine: "+line);
+		System.out.println(error+"\nLine: "+(line+1));
 		throw new ParseCancellationException();
 	}
 
@@ -94,6 +96,13 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 	   	return this.visit(ctx.val); 
 	}
 	/*Rvalue operations*/
+	public Value visitRvalueOp0(tfgParser.RvalueOp0Context ctx) {
+		Value r = this.visit(ctx.r);
+		Value r1 = this.visit(ctx.r1);
+		String op = ctx.op.getText();
+		return doOperations(r,r1,op,ctx.start.getLine());
+	}
+	
 	public Value visitRvalueOp1(tfgParser.RvalueOp1Context ctx) {
 		Value r = this.visit(ctx.r);
 		Value r1 = this.visit(ctx.r1);
@@ -109,11 +118,13 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 	}
 	public Value visitRvalueUnaryOp(tfgParser.RvalueUnaryOpContext ctx) {
 		Value r = this.visit(ctx.r);
+		String op = ctx.op.getText();
 		if (r.isNumber()){
 			if (r.isInteger()){
-				r=new Value(Integer.valueOf(ctx.op.getText()+r.asInteger()));
+				/*TODO error with r sign and op sign at parsing*/
+				r=new Value(Integer.valueOf(op+r.asInteger()));
 			}else{
-				r=new Value(Double.valueOf(ctx.op.getText()+r.asDouble()));
+				r=new Value(Double.valueOf(op+r.asDouble()));
 			}
 		}else{
 			errorHandler("The value: "+r.getValClass()+" is not a number.", ctx.start.getLine());
@@ -160,8 +171,8 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 							" is not boolean", ctx.start.getLine());
 			}else{
 				errorHandler("Neither of the values are boolean.\n"+
-							"Value 1: "+r.getValClass() + 
-							"\nValue 2: " + r1.getValClass(), ctx.start.getLine());
+							"Value 1: "+r.getValClass() + "\n" +
+							"Value 2: " + r1.getValClass(), ctx.start.getLine());
 			}
 		}
 		return new Value(result);
@@ -180,9 +191,11 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 				}else if (r.isString()&&r1.isString()){
 					result=new Value(r.asString()+r1.asString());
 				}else if (r.isList()&&r1.isList()){
-					ArrayList<Value> aux= new ArrayList<>(r.asList());
+					ArrayList<Value> aux= r.asList();
 					aux.addAll(r1.asList());
 					result=new Value(aux);
+				}else if (r.isString()||r1.isString()){
+					result=new Value(r.toString()+r1.toString());
 				}
 			break;
 			case "-":
@@ -203,11 +216,11 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 				if (entero){
 					result=new Value((int)Math.pow(r.asInteger(), r1.asInteger()));
 				}else if (number){
-					result=new Value(Math.pow(r.asInteger(), r1.asInteger()));
+					result=new Value(Math.pow(r.asDouble(), r1.asDouble()));
 				}
 			break;
 			case "/":
-				if (r1.asInteger()!=0){
+				if (r1.asDouble()!=0){
 					if (entero){
 						result=new Value(r.asInteger()/r1.asInteger());
 					}else if (number){
@@ -218,7 +231,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 				}
 			break;
 			case "%":
-				if (r1.asInteger()!=0){
+				if (r1.asDouble()!=0){
 					if (entero){
 						result=new Value(r.asInteger()%r1.asInteger());
 					}else if (number){
@@ -297,7 +310,10 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 	/*Definicion Funcion*/
 	public Value visitFunction_definition(tfgParser.Function_definitionContext ctx) {
 		String func_name= this.visit(ctx.function_definition_header()).asString();
-		functions.put(func_name, ctx);
+		if (!functions.peek().containsKey(func_name))
+			functions.peek().put(func_name, ctx);
+		else
+			errorHandler("The function: "+func_name+" already exists.", ctx.start.getLine());
 		return Value.VOID;
 	}
 	
@@ -366,35 +382,50 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		Value val = this.visit(ctx.l);
 		int index = this.visit(ctx.index).asInteger();
 		val.asList().set(index,this.visit(ctx.newValue));
-		/*TO-DO ADD MORE OPERATORS (at the moment only =)*/
+		/*TODO ADD MORE OPERATORS (at the moment only =)*/
 		return val;
 	}
 	
 	/*Llamada Funcion*/
 	public Value visitFunction_call_id(tfgParser.Function_call_idContext ctx) {
-		tfgParser.Function_definitionContext func=functions.get(ctx.id.getText());//Funcion
-		int idType=func.header.id.getType();//Tipo toquen (IDENTIFICADOR)
-		
-		Map<String, Value> localVar=new HashMap<String, Value>();//Variables locales antes de entrar a la pila
-		
+		int idType,sizeCall,sizeDecla=-1;
 		Value ret =  Value.VOID;
-		if (func.header.param!=null && ctx.param!=null){
-			List<TerminalNode> decVal=func.header.param.getTokens(idType);
-			List<tfgParser.RvalueContext> callVal=ctx.param.rvalue();
-			
-			int sizeCall=callVal.size();
-			int sizeDecla=decVal.size();
-			
-			/*Compruebo que los argumentos son el mismo numero que los declarados*/
-			if (sizeCall==sizeDecla){
-				for (int i=0;i<sizeCall;i++){
-					localVar.put(decVal.get(i).getText(),this.visit(callVal.get(i)));
+		tfgParser.Function_definitionContext func= null;
+		Map<String, Value> localVar=new HashMap<String, Value>();//Variables locales antes de entrar a la pila
+		List<TerminalNode> decVal=null;
+		List<tfgParser.RvalueContext> callVal=null;
+		
+		
+		if (functions.peek().get(ctx.id.getText())!=null){
+			func=functions.peek().get(ctx.id.getText());//Funcion
+			idType=func.header.id.getType();//Se consiguen los nombres de las variables locales.
+			if (func.header.param!=null && ctx.param!=null){
+				decVal=func.header.param.getTokens(idType);
+				callVal=ctx.param.rvalue();
+				
+				sizeCall=callVal.size();
+				sizeDecla=decVal.size();
+				
+				/*Compruebo que los argumentos son el mismo numero que los declarados*/
+				if (sizeCall==sizeDecla){
+					for (int i=0;i<sizeCall;i++){
+						localVar.put(decVal.get(i).getText(),this.visit(callVal.get(i)));
+					}
+				}else{
+					errorHandler("The function " + ctx.getText() +
+					             " exists but doesn't have the same number of parameters" ,
+					             ctx.start.getLine());
 				}
-			}
+			}else if (func.header.param!=null || ctx.param!=null)
+				errorHandler("The function " + ctx.getText() +
+				             " exists but doesn't have the same number of parameters",
+				             ctx.start.getLine());
 			variableStack.push(localVar);//Variables locales EN la pila
 			ret = this.visit(func.function_definition_body());
-			variableStack.pop();//Quitamos la pila una vez acabada la funcion
-		}else{/*TO-DO Comprobar si cumple con los mismos parámetros que la función*/}
+			variableStack.pop();//Quitamos las variables locales una vez acabada la funcion
+		}else{
+			errorHandler("The function " + ctx.getText() + " doesn't exists." , ctx.start.getLine());
+		}
 		return ret;
 	}
 	public Value visitFunctionDefBody(tfgParser.FunctionDefBodyContext ctx) {

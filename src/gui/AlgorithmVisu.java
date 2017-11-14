@@ -17,11 +17,14 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import domain.Algorithm;
-import gram.tfg.tfgLexer;
-import gram.tfg.tfgParser;
-import semantic.tfg.Value;
-import semantic.tfgGUI.EvalVisitorGUI;
-import semantic.tfgGUI.State;
+import domain.antlr.gram.tfg.tfgLexer;
+import domain.antlr.gram.tfg.tfgParser;
+import domain.antlr.semantic.tfg.Value;
+import domain.antlr.semantic.tfgGUI.EvalVisitorGUI;
+import domain.antlr.semantic.tfgGUI.GraphTFG;
+import domain.antlr.semantic.tfgGUI.HandlerParserErrorGUI;
+import domain.antlr.semantic.tfgGUI.ParserError;
+import domain.antlr.semantic.tfgGUI.State;
 
 import javax.swing.JSplitPane;
 import javax.swing.JButton;
@@ -66,6 +69,7 @@ public class AlgorithmVisu extends JFrame {
 	private Timer timerVisualization;
 	private tfgLexer lexer;
 	private tfgParser parser;
+	private HandlerParserErrorGUI errParserHandler= new HandlerParserErrorGUI();
 	private ParseTree tree;
 	private EvalVisitorGUI visitor;
 	private ListIterator<State> states;
@@ -192,7 +196,8 @@ public class AlgorithmVisu extends JFrame {
 			btnPlay.setEnabled(false);
 			algoText.setEnabled(false);
 			btnBackward.setEnabled(true);
-		case Mode.STEP:
+		case Mode.STEP_BACKWARD:
+		case Mode.STEP_FORWARD:
 			algoText.setEnabled(false);
 			btnBackward.setEnabled(true);
 			break;
@@ -203,25 +208,39 @@ public class AlgorithmVisu extends JFrame {
 	
 	public void parseAlgorithm(){
 		if (mode == Mode.DEFAULT){
+			textAreaDebug.setText("");
 			lexer = new tfgLexer(CharStreams.fromString(algoText.getText()));
 			parser = new tfgParser(new CommonTokenStream(lexer));
+			errParserHandler = new HandlerParserErrorGUI();
+			parser.addErrorListener(errParserHandler);
 			tree = parser.start();
+			showParserErrors(errParserHandler.getErrors());
 			visitor = new EvalVisitorGUI();
 			try{
 				visitor.visit(tree);
 				states = visitor.getStates().listIterator();
 			}catch (ParseCancellationException e){
 				State err = visitor.getStates().get(visitor.getStates().size()-1);
-				showError(err);
+				showSemanticError(err);
 				states = visitor.getStates().listIterator();
 			}
-			textAreaDebug.setText("");
 		}
 	}
 	
-	public void showError(State err){
+	public void showParserErrors(ArrayList<ParserError> errors){
+		String str="";
+		if (errors.size()>0){
+			for (ParserError e : errors){
+				str+=e.getError()+ "\tLine: "+ (e.getLine())+":"+e.getColumn()+"\n";
+			}
+			textAreaDebug.setText("%%%%% SYNTAX ERROR %%%%%\n"+str+"\nTrying to execute..."+
+								  "\n\n%%%%%%%%%%%%%%%%%%%\n\n");
+		}
+	}
+	
+	public void showSemanticError(State err){
 		JOptionPane.showMessageDialog(this,
-				err.getSline() + "\nLine: "+ err.getNline(),
+				err.getSline() + "\nLine: "+ (err.getNline()+1),
 				"Error",
 				JOptionPane.ERROR_MESSAGE);
 	}
@@ -233,7 +252,7 @@ public class AlgorithmVisu extends JFrame {
 		pnlStack.removeAll();
 		pnlStack.setLayout(stackLayout);
 		for (Entry<String, GraphTFG> e: graph_list){
-			Component graphComp = e.getValue().getComponent();
+			Component graphComp = new GraphGUI(e.getValue());
 			graphComp.setEnabled(false);
 			pnlStack.addRow(new JLabel(e.getKey() +": "), graphComp);
 		}
@@ -245,9 +264,10 @@ public class AlgorithmVisu extends JFrame {
 	}
 	
 	public void autoLine(State s){
+		String textAD = textAreaDebug.getText();
 		try {
 			if (s.isError()){
-				showError(s);
+				showSemanticError(s);
 			}else{
 				algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
 				algoText.setCurrentLineHighlightColor(s.getColor());
@@ -256,17 +276,25 @@ public class AlgorithmVisu extends JFrame {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
 		}
-		textAreaDebug.setText(textAreaDebug.getText()+s+"\n");
+		
+		if (mode!=Mode.STEP_BACKWARD)
+			textAreaDebug.setText(textAD+s+'\n');
+		else
+			textAreaDebug.setText(textAD.substring(0, textAD.substring(0,textAD.length()-1).lastIndexOf("\n")+1));
 		stackVisualization(s);
+	}
+	
+	private void endVisualization(){
+		mode = Mode.DEFAULT;
+		autoButtons();
+		timerVisualization.stop();
 	}
 	
 	private class BtnPlayActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent arg0) {
 			parseAlgorithm();
 			mode = Mode.PLAY;
-			
 			timerVisualization.start();
-			
 			autoButtons();
 		}
 	}
@@ -275,22 +303,22 @@ public class AlgorithmVisu extends JFrame {
 		public void actionPerformed(ActionEvent e) {
 			State s=null;
 			parseAlgorithm();
-			mode = Mode.STEP;
-			autoButtons();
+			
 			if (states!=null&&states.hasNext()){
 				s = states.next();
+				if (states.hasNext()&&mode==Mode.STEP_BACKWARD)
+					s=states.next();
+				mode = Mode.STEP_FORWARD;
+				autoButtons();
 				autoLine(s);
 			}else{
-				mode = Mode.DEFAULT;
-				autoButtons();
+				endVisualization();
 			}
 		}
 	}
 	private class BtnStopActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
-			mode = Mode.DEFAULT;
-			autoButtons();
-			timerVisualization.stop();
+			endVisualization();
 		}
 	}
 	private class BtnPauseActionListener implements ActionListener {
@@ -305,14 +333,16 @@ public class AlgorithmVisu extends JFrame {
 	private class BtnBackwardActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			State s=null;
-			mode = Mode.STEP;
-			autoButtons();
+			
 			if (states!=null&&states.hasPrevious()){
 				s = states.previous();
+				if (states.hasPrevious() && mode == Mode.STEP_FORWARD)
+					s = states.previous();
+				mode = Mode.STEP_BACKWARD;
+				autoButtons();
 				autoLine(s);
 			}else{
-				mode = Mode.DEFAULT;
-				autoButtons();
+				endVisualization();
 			}
 		}
 	}
@@ -320,13 +350,13 @@ public class AlgorithmVisu extends JFrame {
 	private class BtnPlayTimerActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			State s = null;
+			mode = Mode.PLAY;
+			autoButtons();
 			if (states!=null&&states.hasNext()) {
 				s = states.next();
 				autoLine(s);
 			} else {
-				mode = Mode.DEFAULT;
-				autoButtons();
-				timerVisualization.stop();
+				endVisualization();
 			}
 		
 		}

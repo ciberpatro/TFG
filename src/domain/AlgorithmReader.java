@@ -1,16 +1,17 @@
-package drivers;
+package domain;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 
-import domain.Algorithm;
-import gram.conf.confLexer;
-import gram.conf.confParser;
-import gram.conf.confVisitor;
-import gram.conf.confParser.StartContext;
-import semantic.conf.ConfVisitor;
+import drivers.Reader;
+import drivers.ReaderAlgorithmController;
+import domain.antlr.gram.conf.confLexer;
+import domain.antlr.gram.conf.confParser;
+import domain.antlr.gram.conf.confVisitor;
+import domain.antlr.gram.conf.confParser.StartContext;
+import domain.antlr.semantic.conf.ConfVisitor;
 
 public class AlgorithmReader implements ReaderAlgorithmController{
 	private final String PATH = "/resources/algorithms/";

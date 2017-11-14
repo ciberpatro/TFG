@@ -1,0 +1,19 @@
+function sort(v)
+	directInsert(v,size(v))
+end
+
+function directInsert(v,s)
+	for (i=2; i<s; i+=1)
+		x = v[i]
+		j = i-1
+		while (x<=v[j])
+			v[j+1] = v[j]
+			j = j-1
+		end
+		v[j+1] = x
+	end
+end
+
+list=[3,4,5,2,6,1,5]
+
+sort(list)

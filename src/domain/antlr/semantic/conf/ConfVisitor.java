@@ -1,8 +1,8 @@
-package semantic.conf;
+package domain.antlr.semantic.conf;
 
 import domain.Algorithm;
 import drivers.ReaderAlgorithmController;
-import gram.conf.*;
+import domain.antlr.gram.conf.*;
 
 public class ConfVisitor extends confBaseVisitor <String> {
 

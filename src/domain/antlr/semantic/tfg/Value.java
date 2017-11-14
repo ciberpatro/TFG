@@ -1,4 +1,4 @@
-package semantic.tfg;
+package domain.antlr.semantic.tfg;
 import java.util.ArrayList;
 public class Value {
 

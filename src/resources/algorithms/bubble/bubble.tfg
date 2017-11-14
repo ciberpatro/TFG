@@ -1,0 +1,23 @@
+function sort(v)
+	bubble(v, size(v))
+end
+
+function bubble(v, s)
+	for (i = 0;i<s; i+=1) 
+		for (j=s-1;i<j;j-=1) 
+			if (v[j-1]>v[j])
+				swap(v,j-1,j)
+			end
+		end
+	end
+end
+
+function swap(v,pos1,pos2)
+	aux=v[pos1]
+	v[pos1]=v[pos2]
+	v[pos2]=aux
+end
+
+list=[3,4,5,2,6,1,5]
+
+sort(list)

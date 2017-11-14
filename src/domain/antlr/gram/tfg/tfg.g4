@@ -30,7 +30,6 @@ function_call : PRINT ROUNDBRACKETOPEN rvalue ROUNDBRACKETCLOSED # function_call
 
 function_call_param_list : (rvalue COMMA)* rvalue;
 
- 
 if_statement : IF ROUNDBRACKETOPEN condition=rvalue ROUNDBRACKETCLOSED CRLF exprIf=expression_list exprElseIf=elseIf_statement* exprElse=else_statement? END #ifStatement;
 
 elseIf_statement : ELSE IF ROUNDBRACKETOPEN condition=rvalue ROUNDBRACKETCLOSED CRLF expr=expression_list #elseIfStatement;
@@ -45,7 +44,7 @@ do_while_statement : DO CRLF expr=expression_list WHILE ROUNDBRACKETOPEN conditi
 
 assignment : l=lvalue op=operators r=rvalue #assignmentStatement;
 
-operators : EQUALS | PLUS_EQUAL | MINUS_EQUAL | MULTI_EQUAL | DIV_EQUAL | MOD_EQUAL | POW_EQUAL;
+operators : EQUALS | PLUS_EQUAL | MINUS_EQUAL | MULT_EQUAL | DIV_EQUAL | MOD_EQUAL | POW_EQUAL;
 
 array_definition : SQUAREBRACKETOPEN eleArray=array_definition_elements? SQUAREBRACKETCLOSED;
 
@@ -53,31 +52,33 @@ array_definition_elements : (rvalue COMMA)* rvalue;
 
 lvalue : ID	#lvaluelocal;
 
-rvalue : 
-	lvalue	#rvalueLvalue
-	|ROUNDBRACKETOPEN val=rvalue ROUNDBRACKETCLOSED	#rvalueParenthesis
+rvalue :
+	ROUNDBRACKETOPEN val=rvalue ROUNDBRACKETCLOSED	#rvalueParenthesis
+	|lvalue	#rvalueLvalue
 	|STRING	#rvalueCadena
 	|BOOLEAN	#rvalueBoolean
 	|FLOAT	#rvalueFloat
 	|INTEGER	#rvalueEntero
-	|NULL	#rvalueNull
+	|array_definition	#rvalueArrayDefinition
 	|matrix=rvalue SQUAREBRACKETOPEN index=rvalue SQUAREBRACKETCLOSED	#rvalueArraySelection
 	|assignment #rvalueAssignment
-	|array_definition	#rvalueArrayDefinition
 	|l=rvalue SQUAREBRACKETOPEN index=rvalue SQUAREBRACKETCLOSED operators newValue=rvalue #rvalueArrayIndexAssign
-	|op=(PLUS | MINUS) r=rvalue #rvalueUnaryOp
+	|function_call	#rvalueFunction_call
 	|r=rvalue op=POW r1=rvalue	#rvalueOp0
+	|op=(PLUS | MINUS) r=rvalue #rvalueUnaryOp
 	|r=rvalue op=(MULT | DIV | MOD) r1=rvalue	#rvalueOp1
 	|r=rvalue op=(PLUS | MINUS) r1=rvalue	#rvalueop2
-	|op=COMPBOOL2 r=rvalue	#rvalueBoolean2
 	|r=rvalue op=COMP1 r1=rvalue	#rvalueComp1
 	|r=rvalue op=COMP2 r1=rvalue	#rvalueComp2
 	|r=rvalue op=COMPBOOL1 r1=rvalue	#rvalueBoolean1
-	|function_call	#rvalueFunction_call
+	|op=COMPBOOL2 r=rvalue	#rvalueBoolean2
 	;
 
 INTEGER : [0-9]+ ;
 FLOAT : [0-9]+'.'[0-9]+;
+STRING :   '"'( ESCAPEDQUOTE | ~('\n'|'\r') )*? '"' {setText(getText().substring(1, getText().length()-1));}
+		| '\''( ESCAPEDQUOTE | ~('\n'|'\r') )*? '\''{setText(getText().substring(1, getText().length()-1));};
+BOOLEAN : 'true' | 'false';
 PRINT : 'print';
 SIZE : 'size';
 COPY : 'copy';
@@ -90,19 +91,18 @@ DO : 'do';
 ELSIF : 'elsif';
 WHILE : 'while';
 FOR : 'for';
-BOOLEAN : 'true' | 'false';
+POW : '**';
 PLUS : '+';
 MINUS : '-';
 MULT : '*';
 DIV : '/';
 MOD : '%';
-POW : '**';
 COMP1 : '==' | '!=';
 COMP2 : '>' | '<' | '<=' | '>=';
 EQUALS : '=';
 PLUS_EQUAL : '+=';
 MINUS_EQUAL : '-=';
-MULTI_EQUAL : '*=';
+MULT_EQUAL : '*=';
 DIV_EQUAL : '/=';
 MOD_EQUAL : '%=';
 POW_EQUAL : '**=';
@@ -112,12 +112,12 @@ ROUNDBRACKETOPEN : '(';
 ROUNDBRACKETCLOSED : ')';
 SQUAREBRACKETOPEN : '[';
 SQUAREBRACKETCLOSED : ']';
-NULL : 'null';
 ID : [a-zA-Z_][a-zA-Z0-9_]*;
 COMMA : ',';
 SEMICOLON : ';';
 CRLF : '\n';
-COMMENTS : ('#' ~('\r' | '\n')* '\n' | '=begin' .*? '=end') -> skip;
-STRING :  '"'( ESCAPEDQUOTE| ~('\n'|'\r') )*? '"'| '\''( ESCAPEDQUOTE| ~('\n'|'\r') )*? '\'';
-ESCAPEDQUOTE : '\\"';
+COMMENTS : ('#' ~('\r' | '\n')* '\n' | '/*' .*? '*/') -> skip;
+ESCAPEDQUOTE : '\\"' 
+			 | '\\\''
+			 | '\\\\';
 WHITE_SPACES : [ \t\r]+ -> skip;

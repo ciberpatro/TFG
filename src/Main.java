@@ -5,10 +5,10 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import gram.tfg.tfgLexer;
-import gram.tfg.tfgParser;
+import domain.antlr.gram.tfg.tfgLexer;
+import domain.antlr.gram.tfg.tfgParser;
 import gui.MainMenu;
-import semantic.tfg.EvalVisitor;
+import domain.antlr.semantic.tfg.EvalVisitor;
 
 public class Main {
 	public static void main(String[] args) throws Exception {

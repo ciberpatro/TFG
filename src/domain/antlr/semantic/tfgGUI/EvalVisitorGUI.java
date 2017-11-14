@@ -1,4 +1,4 @@
-package semantic.tfgGUI;
+package domain.antlr.semantic.tfgGUI;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -6,10 +6,10 @@ import java.util.List;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.ParseTree;
 
-import gram.tfg.tfgParser;
-import gram.tfg.tfgParser.ForClassicStatementContext;
-import semantic.tfg.EvalVisitor;
-import semantic.tfg.Value;
+import domain.antlr.gram.tfg.tfgParser;
+import domain.antlr.gram.tfg.tfgParser.ForClassicStatementContext;
+import domain.antlr.semantic.tfg.EvalVisitor;
+import domain.antlr.semantic.tfg.Value;
 
 public class EvalVisitorGUI extends EvalVisitor {
 	private ArrayList<State> states;
@@ -42,8 +42,14 @@ public class EvalVisitorGUI extends EvalVisitor {
 		return rvalue;
 	}
 	protected void errorHandler(String error, int line) {
-		State err = states.get(states.size()-1);
-		err.setError(error);
+		State err = null;
+		if (states.size()>0){
+			err = states.get(states.size()-1);
+			err.setError(error);
+		}else{
+			err=new State(line, 0, error, variableStack.peek());
+			states.add(err);
+		}
 		throw new ParseCancellationException();
 	}
 	private void setCellColor(String var, int index){
@@ -159,6 +165,7 @@ public class EvalVisitorGUI extends EvalVisitor {
 		condition = this.visit(ctx.condition);
 		line = ctx.WHILE()+"("+getStringLine(ctx.rvalue().children)+")";
 		st.setSline(line);
+		line="";
 		if (condition.isBoolean()){
 			st.setColorBool(condition.asBoolean());
 			while (condition.asBoolean()){

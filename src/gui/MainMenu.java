@@ -8,7 +8,7 @@ import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
 
 import domain.Algorithm;
-import drivers.AlgorithmReader;
+import domain.AlgorithmReader;
 
 import javax.swing.JComboBox;
 import javax.swing.JButton;

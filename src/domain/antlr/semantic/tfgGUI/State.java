@@ -1,4 +1,4 @@
-package semantic.tfgGUI;
+package domain.antlr.semantic.tfgGUI;
 
 import java.awt.Color;
 import java.util.HashMap;
@@ -6,10 +6,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import com.mxgraph.model.mxGraphModel;
-
-import gui.GraphTFG;
-import semantic.tfg.Value;
+import domain.antlr.semantic.tfg.Value;
 
 public class State {
 	private final String SPACE_WIDTH = "   ";
@@ -66,10 +63,10 @@ public class State {
 	}
 
 	public void updateGraph(String id, int index){
-		mxGraphModel a = null;
+		GraphTFG graph = null;
 		if (graph_list.get(id) != null){
-			a = (mxGraphModel) graph_list.get(id).getModel();
-			graph_list.get(id).setCellStyle("fillColor=orange",new Object[]{a.getCell("I"+index)});
+			graph = graph_list.get(id);
+			graph.setSelectColor(index);
 		}
 	}
 	public String toString(){

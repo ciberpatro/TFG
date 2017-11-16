@@ -443,9 +443,10 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 	}
 	/*If statement*/
 	public Value visitIfStatement(tfgParser.IfStatementContext ctx) {
-		Value condition=this.visit(ctx.condition);
-		if (condition.isBoolean()){
-			if (condition.asBoolean()){
+		Value conditionIf=this.visit(ctx.condition);
+		Value condition =new Value(conditionIf);
+		if (conditionIf.isBoolean()){
+			if (conditionIf.asBoolean()){
 				this.visit(ctx.exprIf);
 			}else if (ctx.exprElseIf != null){
 				List<tfgParser.ElseIf_statementContext> elseif=ctx.elseIf_statement();
@@ -456,7 +457,7 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		}else{
 			errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
 		}
-		return condition;
+		return conditionIf;
 	}
 	
 	/*ElseIf statement*/

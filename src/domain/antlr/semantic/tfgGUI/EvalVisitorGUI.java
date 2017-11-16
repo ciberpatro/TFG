@@ -13,8 +13,10 @@ import domain.antlr.semantic.tfg.Value;
 
 public class EvalVisitorGUI extends EvalVisitor {
 	private ArrayList<State> states;
+	private int deep;
 	public EvalVisitorGUI(){
 		super();
+		deep=0;
 		states = new ArrayList<State>();
 	}
 	
@@ -47,7 +49,7 @@ public class EvalVisitorGUI extends EvalVisitor {
 			err = states.get(states.size()-1);
 			err.setError(error);
 		}else{
-			err=new State(line, 0, error, variableStack.peek());
+			err=new State(line, 0, error, variableStack);
 			states.add(err);
 		}
 		throw new ParseCancellationException();
@@ -63,12 +65,29 @@ public class EvalVisitorGUI extends EvalVisitor {
 	
 	public Value visitIfStatement(tfgParser.IfStatementContext ctx) {
 		String line = ctx.IF()+"("+getStringLine(ctx.condition.children)+")";
-		State st = new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek());
+		State st = new State (ctx.start.getLine(),deep+ctx.start.getCharPositionInLine(),line,variableStack);
 		Value val = null;
 		states.add(st);
 		val = super.visitIfStatement(ctx);
 		st.setColorBool(val.asBoolean());
 		return val;
+	}
+	
+	public Value visitElseIfStatement(tfgParser.ElseIfStatementContext ctx) {
+		String line = ctx.ELSE()+" "+ctx.IF()+"("+getStringLine(ctx.condition.children)+")";
+		State st = new State (ctx.start.getLine(),deep+ctx.start.getCharPositionInLine(),line,variableStack);
+		Value val = null;
+		states.add(st);
+		val = super.visitElseIfStatement(ctx);
+		st.setColorBool(val.asBoolean());
+		return val;
+	}
+	
+	public Value visitElseStatement(tfgParser.ElseStatementContext ctx) {
+		String line = ctx.ELSE().toString();
+		State st = new State (ctx.start.getLine(),deep+ctx.start.getCharPositionInLine(),line,variableStack);
+		states.add(st);
+		return visitChildren(ctx);
 	}
 	
 	public Value visitAssignmentStatement(tfgParser.AssignmentStatementContext ctx) {
@@ -81,7 +100,7 @@ public class EvalVisitorGUI extends EvalVisitor {
 			ctxFor = (ForClassicStatementContext) ctx.getParent();
 			charPos = ctxFor.start.getCharPositionInLine();
 		}
-		st = new State (ctx.start.getLine(), charPos,line,variableStack.peek());
+		st = new State (ctx.start.getLine(), deep+charPos,line,variableStack);
 		states.add(st);
 		
 		line=ctx.l.getText() + "=";
@@ -89,7 +108,7 @@ public class EvalVisitorGUI extends EvalVisitor {
 		
 		if (ctx.r.children.get(0) instanceof tfgParser.Function_call_idContext){
 			st.setSline(line+getStringLine(ctx.r.children));
-			st = new State (ctx.start.getLine(), charPos,"",variableStack.peek());
+			st = new State (ctx.start.getLine(), deep+charPos,"",variableStack);
 			states.add(st);
 		}
 		
@@ -111,35 +130,30 @@ public class EvalVisitorGUI extends EvalVisitor {
 	
 	public Value visitFunction_call_id(tfgParser.Function_call_idContext ctx) {
 		String line = getStringLine(ctx.children);
+		Value val = null;
+		System.out.println(ctx.start.getLine()+" "+(ctx.getParent().getParent() instanceof tfgParser.AssignmentStatementContext));
 		if (!(ctx.getParent().getParent() instanceof tfgParser.AssignmentStatementContext))
-			states.add(new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek()));
-		return super.visitFunction_call_id(ctx);
+			states.add(new State (ctx.start.getLine(),deep+ctx.start.getCharPositionInLine(),line,variableStack));
+		deep+=ctx.start.getCharPositionInLine();
+		val = super.visitFunction_call_id(ctx);
+		deep-=ctx.start.getCharPositionInLine();
+		return val;
 	}
 	
 	public Value visitReturnStatement(tfgParser.ReturnStatementContext ctx) {
 		String line = ctx.RETURN() +" "+ super.visit(ctx.ret).toString();
-		states.add(new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek()));
+		states.add(new State (ctx.start.getLine(),deep+ctx.start.getCharPositionInLine(),line,variableStack));
 		return super.visit(ctx.ret);
-	}
-	
-	public Value visitElseIfStatement(tfgParser.ElseIfStatementContext ctx) {
-		String line = ctx.IF()+"("+getStringLine(ctx.condition.children)+")";
-		State st = new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek());
-		Value val = null;
-		states.add(st);
-		val = super.visitElseIfStatement(ctx);
-		st.setColorBool(val.asBoolean());
-		return val;
 	}
 	
 	public Value visitFunction_call_print(tfgParser.Function_call_printContext ctx) {
 		String line = ctx.PRINT()+"("+super.visit(ctx.rvalue())+")";
-		states.add(new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek()));
+		states.add(new State (ctx.start.getLine(),deep+ctx.start.getCharPositionInLine(),line,variableStack));
 		return super.visitFunction_call_print(ctx);
 	}
 
 	public Value visitRvalueArrayIndexAssign(tfgParser.RvalueArrayIndexAssignContext ctx) {
-		State st = new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),"",variableStack.peek());
+		State st = new State (ctx.start.getLine(),deep+ctx.start.getCharPositionInLine(),"",variableStack);
 		String line = "";
 		states.add(st);
 		line = super.visit(ctx.l)+"["+super.visit(ctx.index)+"]"+ctx.operators().getText()+super.visit(ctx.newValue);
@@ -157,7 +171,7 @@ public class EvalVisitorGUI extends EvalVisitor {
 	
 	public Value visitWhileStatement(tfgParser.WhileStatementContext ctx) {
 		String line="";
-		State st = new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek());
+		State st = new State (ctx.start.getLine(),deep+ctx.start.getCharPositionInLine(),line,variableStack);
 		Value condition = null;
 		
 		states.add(st);
@@ -170,7 +184,7 @@ public class EvalVisitorGUI extends EvalVisitor {
 			st.setColorBool(condition.asBoolean());
 			while (condition.asBoolean()){
 				this.visit(ctx.exprWhile);
-				st = new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek());
+				st = new State (ctx.start.getLine(),deep+ctx.start.getCharPositionInLine(),line,variableStack);
 				states.add(st);
 				condition = this.visit(ctx.condition);
 				if (!condition.isBoolean()){
@@ -190,13 +204,13 @@ public class EvalVisitorGUI extends EvalVisitor {
 		State st = null;
 		Value condition = null;
 		do{
-			st=new State (ctx.start.getLine(),ctx.start.getCharPositionInLine(),line,variableStack.peek());
+			st=new State (ctx.start.getLine(),deep+ctx.start.getCharPositionInLine(),line,variableStack);
 			states.add(st);
 			this.visit(ctx.expr);
 			condition=this.visit(ctx.condition);
 			if (!condition.isBoolean())
 				errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
-			st=new State (ctx.stop.getLine(),ctx.start.getCharPositionInLine(),ctx.WHILE()+"("+getStringLine(ctx.rvalue().children)+")",variableStack.peek());
+			st=new State (ctx.stop.getLine(),deep+ctx.start.getCharPositionInLine(),ctx.WHILE()+"("+getStringLine(ctx.rvalue().children)+")",variableStack);
 			st.setColorBool(condition.asBoolean());
 			states.add(st);
 		}while(condition.asBoolean());

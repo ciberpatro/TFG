@@ -15,8 +15,13 @@ public class Reader {
 		return reader;
 	}
 	
-	public String read(String path) throws FileNotFoundException{
-		Scanner sc = new Scanner (getClass().getResourceAsStream(path));
+	public String read(String path) throws FileNotFoundException {
+		Scanner sc = null;
+		try{
+		sc = new Scanner (getClass().getResourceAsStream(path));
+		}catch (NullPointerException e){
+			throw new FileNotFoundException("Couldn't open the file: "+path+"\nCheck the resources folder or the file algorithms.conf");
+		}
 		String fileText="";
 		while (sc.hasNextLine()){
 			fileText+=sc.nextLine()+"\n";

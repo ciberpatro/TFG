@@ -1,23 +1,23 @@
 package domain.antlr.semantic.conf;
 
 import domain.Algorithm;
-import drivers.ReaderAlgorithmController;
+import domain.ControllerParserConf;
 import domain.antlr.gram.conf.*;
 
 public class ConfVisitor extends confBaseVisitor <String> {
 
 	private Algorithm algo;
-	private ReaderAlgorithmController algoReader;
+	private ControllerParserConf cpc;
 	
-	public ConfVisitor(ReaderAlgorithmController algoConfReader){
+	public ConfVisitor(ControllerParserConf algorithms){
 		super();
-		this.algoReader = algoConfReader;
+		this.cpc = algorithms;
 	}
 	
 	public String visitExpressionList(confParser.ExpressionListContext ctx) {
 		algo = new Algorithm();
 		visitChildren(ctx);
-		algoReader.add(algo);
+		cpc.addAlgorithm(algo);
 		return "";
 	}
 	

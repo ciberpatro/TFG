@@ -1,6 +1,7 @@
 package gui;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.Component;
 
 import javax.swing.JFrame;
@@ -8,23 +9,18 @@ import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.text.BadLocationException;
 
-import org.antlr.v4.runtime.CharStreams;
-import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.misc.ParseCancellationException;
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import domain.Algorithm;
-import domain.antlr.gram.tfg.tfgLexer;
-import domain.antlr.gram.tfg.tfgParser;
-import domain.antlr.semantic.tfg.Value;
-import domain.antlr.semantic.tfgGUI.EvalVisitorGUI;
+import domain.ControllerParserTfgGUI;
 import domain.antlr.semantic.tfgGUI.GraphTFG;
-import domain.antlr.semantic.tfgGUI.HandlerParserErrorGUI;
-import domain.antlr.semantic.tfgGUI.ParserError;
+import domain.antlr.semantic.ParserError;
+import domain.antlr.semantic.tfg.Value;
 import domain.antlr.semantic.tfgGUI.State;
+import domain.antlr.semantic.tfgGUI.StateConstants;
 
 import javax.swing.JSplitPane;
 import javax.swing.JButton;
@@ -67,11 +63,6 @@ public class AlgorithmVisu extends JFrame {
 	private JScrollPane scrollLine;
 	private JTextArea textAreaDebug;
 	private Timer timerVisualization;
-	private tfgLexer lexer;
-	private tfgParser parser;
-	private HandlerParserErrorGUI errParserHandler= new HandlerParserErrorGUI();
-	private ParseTree tree;
-	private EvalVisitorGUI visitor;
 	private ListIterator<State> states;
 	private JButton btnBackward;
 	private int mode = Mode.DEFAULT;
@@ -82,6 +73,7 @@ public class AlgorithmVisu extends JFrame {
 	private JFrame parent;
 	private JPanel panel_1;
 	private JSlider slider;
+	private ControllerParserTfgGUI controllerParser;
 	
 	public AlgorithmVisu(Algorithm algorithm, JFrame parent) {
 		this.parent = parent;
@@ -207,23 +199,22 @@ public class AlgorithmVisu extends JFrame {
 	}
 	
 	public void parseAlgorithm(){
+		ArrayList<State> stateListAux =null;
 		if (mode == Mode.DEFAULT){
 			textAreaDebug.setText("");
-			lexer = new tfgLexer(CharStreams.fromString(algoText.getText()));
-			parser = new tfgParser(new CommonTokenStream(lexer));
-			errParserHandler = new HandlerParserErrorGUI();
-			parser.addErrorListener(errParserHandler);
-			tree = parser.start();
-			showParserErrors(errParserHandler.getErrors());
-			visitor = new EvalVisitorGUI();
+			controllerParser= new ControllerParserTfgGUI(algoText.getText());
+			showParserErrors(controllerParser.getErrors());
 			try{
-				visitor.visit(tree);
-				states = visitor.getStates().listIterator();
+				controllerParser.startParsing();
+				stateListAux=controllerParser.getStatesTfgGUI();
+				states = stateListAux.listIterator();
 			}catch (ParseCancellationException e){
-				State err = visitor.getStates().get(visitor.getStates().size()-1);
+				stateListAux=controllerParser.getStatesTfgGUI();
+				State err = stateListAux.get(stateListAux.size()-1);
 				showSemanticError(err);
-				states = visitor.getStates().listIterator();
+				states = stateListAux.listIterator();
 			}
+			
 		}
 	}
 	
@@ -270,7 +261,13 @@ public class AlgorithmVisu extends JFrame {
 				showSemanticError(s);
 			}else{
 				algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
-				algoText.setCurrentLineHighlightColor(s.getColor());
+				int c = s.getColor();
+				if (c==StateConstants.DEFAULT)
+					algoText.setCurrentLineHighlightColor(new Color(255,255,170));
+				else if (c==StateConstants.CONDITION_TRUE)
+					algoText.setCurrentLineHighlightColor(new Color(144, 238, 144));
+				else
+					algoText.setCurrentLineHighlightColor(new Color(255,193,193));
 			}
 		} catch (BadLocationException e1) {
 			// TODO Auto-generated catch block

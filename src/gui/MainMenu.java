@@ -3,6 +3,7 @@ package gui;
 import java.awt.BorderLayout;
 
 import javax.swing.JFrame;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.border.EmptyBorder;
 import javax.swing.border.TitledBorder;
@@ -15,12 +16,12 @@ import javax.swing.JButton;
 import java.awt.GridBagLayout;
 import java.awt.GridBagConstraints;
 import java.awt.Insets;
-import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Vector;
 
 import javax.swing.DefaultComboBoxModel;
 import java.awt.event.ItemListener;
+import java.io.FileNotFoundException;
 import java.awt.event.ItemEvent;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -111,7 +112,7 @@ public class MainMenu extends JFrame {
 		gbc_btnExit.gridy = 0;
 		panel_1.add(btnExit, gbc_btnExit);
 		
-		cbAlgorithms = new JComboBox();
+		cbAlgorithms = new JComboBox<Vector<Algorithm>>();
 		cbAlgorithms.addItemListener(new CbAlgorithmsItemListener());
 		
 		GridBagConstraints gbc_cbAlgorithms = new GridBagConstraints();
@@ -126,10 +127,15 @@ public class MainMenu extends JFrame {
 			ArrayList<Algorithm> algoconfs =new AlgorithmReader().getAlgorithms();
 			cbAlgorithms.setModel(new DefaultComboBoxModel(new Vector<Algorithm>(algoconfs)));
 			Algorithm algorithm = (Algorithm) cbAlgorithms.getSelectedItem();
-			txtDescription.setText(algorithm.getDescription());
+			if (algorithm!= null)
+				txtDescription.setText(algorithm.getDescription());
+			else
+				btnOk.setEnabled(false);
 		} catch (FileNotFoundException e) {
-			//TODO ADD JDialog to show the FileNotFoundException
-			e.printStackTrace();
+			JOptionPane.showMessageDialog(this,
+					e.getMessage(),
+					"Error",
+					JOptionPane.ERROR_MESSAGE);
 		}
 		
 	}

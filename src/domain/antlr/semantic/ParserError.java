@@ -1,4 +1,4 @@
-package domain.antlr.semantic.tfgGUI;
+package domain.antlr.semantic;
 
 public class ParserError {
 	private int line;

@@ -11,17 +11,17 @@ import java.util.Stack;
 
 public class State {
 	private int nline;
-	private boolean isError=false;
 	private int cline=StateConstants.DEFAULT;
-	private String sline="";
+	private int ntabs;
+	private int type=StateConstants.DEFAULT;
+	private String sline;
 	private Map<String, Value> variables;
 	private Map<String, GraphTFG> graph_list;
 	
 	public State (int nline, int ntabs, String sline, Stack<Map<String, Value>> variables){
 		this.nline=nline-1;
-		for (int i=0;i<ntabs;i++)
-			this.sline+=StateConstants.SPACE_WIDTH;
-		this.sline+=sline;
+		this.sline=sline;
+		this.ntabs=ntabs;
 		this.variables=new HashMap<String, Value>();
 		this.graph_list=new HashMap<String, GraphTFG>();
 		Map<String, Value> firstStack = variables.pop();
@@ -29,20 +29,21 @@ public class State {
 		
 		if(!variables.isEmpty())
 			secondStack = variables.peek();
-		
-		Set<Entry<String, Value>> var = firstStack.entrySet();
-		for (Entry<String, Value> e : var ){
-			if (e.getValue().isList()){
-				this.graph_list.put(e.getKey(), new GraphTFG(e.getValue().asList()));
-			}else if (secondStack!=null&&
-			          secondStack.containsKey(e.getKey())&&
-			          secondStack.get(e.getKey())==e.getValue()){
-				this.variables.put(e.getKey(), e.getValue());
-			}else{
-				this.variables.put(e.getKey(), new Value(e.getValue()));
+		if(firstStack!=null){
+			Set<Entry<String, Value>> var = firstStack.entrySet();
+			for (Entry<String, Value> e : var ){
+				if (e.getValue().isList()){
+					this.graph_list.put(e.getKey(), new GraphTFG(e.getValue().asList()));
+				}else if (secondStack!=null&&
+				          secondStack.containsKey(e.getKey())&&
+				          secondStack.get(e.getKey())==e.getValue()){
+					this.variables.put(e.getKey(), e.getValue());
+				}else{
+					this.variables.put(e.getKey(), new Value(e.getValue()));
+				}
 			}
+			variables.push(firstStack);
 		}
-		variables.push(firstStack);
 	}
 	
 	public void setColorBool(boolean colorBool){
@@ -54,40 +55,54 @@ public class State {
 	}
 	
 	public int getNline() {
-		return nline;
+		return this.nline;
+	}
+	
+	public int getNtabs(){
+		return this.ntabs;
+	}
+	
+	public int setNtabs(int ntabs){
+		return this.ntabs=ntabs;
 	}
 
 	public String getSline() {
-		return sline;
+		return this.sline;
 	}
 
 	public Map<String, Value> getVariables() {
-		return variables;
+		return this.variables;
 	}
 	public Map<String, GraphTFG> getGraphs(){
-		return graph_list;
+		return this.graph_list;
 	}
 	
 	public void setSline(String sline) {
-		this.sline+=sline;
+		this.sline=sline;
 	}
 
 	public void updateGraph(String id, int index){
 		GraphTFG graph = null;
-		if (graph_list.get(id) != null){
-			graph = graph_list.get(id);
+		if (this.graph_list.get(id) != null){
+			graph = this.graph_list.get(id);
 			graph.setSelectColor(index);
 		}
 	}
 	public String toString(){
-		return sline;
+		return this.sline;
 	}
 
 	public void setError(String error) {
 		this.sline=error;
-		this.isError=true;
+		this.type=StateConstants.ERROR;
 	}
 	public boolean isError(){
-		return this.isError;
+		return this.type==StateConstants.ERROR;
+	}
+	public void setFinal(boolean isFinal){
+		this.type=isFinal?StateConstants.FINAL:StateConstants.DEFAULT;
+	}
+	public boolean isFinal(){
+		return this.type==StateConstants.FINAL;
 	}
 }

@@ -44,12 +44,20 @@ import javax.swing.JSlider;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ChangeEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 public class AlgorithmVisu extends JFrame {
 	
 	private final int TIMER_DEFAULT_SPEED = -500;
 	private final int TIMER_MIN_SPEED = -1000;
 	private final int TIMER_MAX_SPEED = -10;
+	
+	private final String SPACE_WIDTH="···";
+	
+	private final Color YELLOW = new Color(255,255,170);
+	private final Color GREEN = new Color(144, 238, 144);
+	private final Color RED = new Color(255,193,193);
 	
 	private JPanel contentPane;
 	private JSplitPane splitAlgoMenu;
@@ -74,6 +82,7 @@ public class AlgorithmVisu extends JFrame {
 	private JPanel panel_1;
 	private JSlider slider;
 	private ControllerParserTfgGUI controllerParser;
+	
 	
 	public AlgorithmVisu(Algorithm algorithm, JFrame parent) {
 		this.parent = parent;
@@ -118,6 +127,7 @@ public class AlgorithmVisu extends JFrame {
 		pnlStack.setLayout(gbl_pnlStack);
 		
 		algoText = new RSyntaxTextArea();
+		algoText.addMouseListener(new AlgoTextMouseListener());
 		algoText.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_RUBY);
 		algoText.setCodeFoldingEnabled(true);
 		panelAlgo.setLayout(new BorderLayout(0, 0));
@@ -178,22 +188,25 @@ public class AlgorithmVisu extends JFrame {
 		case Mode.PAUSE:
 			btnPlay.setEnabled(true);
 			btnBackward.setEnabled(true);
+			algoText.setEditable(false);
 			break;
 		case Mode.DEFAULT:
 			btnPlay.setEnabled(true);
 			algoText.setEnabled(true);
 			btnBackward.setEnabled(false);
+			algoText.setEditable(true);
 			break;
 		case Mode.PLAY:
 			btnPlay.setEnabled(false);
 			algoText.setEnabled(false);
 			btnBackward.setEnabled(true);
+			algoText.setEditable(false);
 		case Mode.STEP_BACKWARD:
 		case Mode.STEP_FORWARD:
 			algoText.setEnabled(false);
 			btnBackward.setEnabled(true);
+			algoText.setEditable(false);
 			break;
-			
 		}
 		
 	}
@@ -256,6 +269,10 @@ public class AlgorithmVisu extends JFrame {
 	
 	public void autoLine(State s){
 		String textAD = textAreaDebug.getText();
+		String indentation = "";
+		for (int i =0;i<s.getNtabs();i++){
+			indentation+=SPACE_WIDTH;
+		}
 		try {
 			if (s.isError()){
 				showSemanticError(s);
@@ -263,11 +280,18 @@ public class AlgorithmVisu extends JFrame {
 				algoText.moveCaretPosition(algoText.getLineStartOffset(s.getNline()));
 				int c = s.getColor();
 				if (c==StateConstants.DEFAULT)
-					algoText.setCurrentLineHighlightColor(new Color(255,255,170));
+					algoText.setCurrentLineHighlightColor(YELLOW);
 				else if (c==StateConstants.CONDITION_TRUE)
-					algoText.setCurrentLineHighlightColor(new Color(144, 238, 144));
+					algoText.setCurrentLineHighlightColor(GREEN);
 				else
-					algoText.setCurrentLineHighlightColor(new Color(255,193,193));
+					algoText.setCurrentLineHighlightColor(RED);
+				if (s.isFinal()){
+					timerVisualization.stop();
+					JOptionPane.showMessageDialog(this,
+							s.getSline(),
+							"The exectuion has finished",
+							JOptionPane.INFORMATION_MESSAGE);
+				}
 			}
 		} catch (BadLocationException e1) {
 			// TODO Auto-generated catch block
@@ -275,7 +299,7 @@ public class AlgorithmVisu extends JFrame {
 		}
 		
 		if (mode!=Mode.STEP_BACKWARD)
-			textAreaDebug.setText(textAD+s+'\n');
+			textAreaDebug.setText(textAD+indentation+s+'\n');
 		else
 			textAreaDebug.setText(textAD.substring(0, textAD.substring(0,textAD.length()-1).lastIndexOf("\n")+1));
 		stackVisualization(s);
@@ -283,8 +307,9 @@ public class AlgorithmVisu extends JFrame {
 	
 	private void endVisualization(){
 		mode = Mode.DEFAULT;
-		autoButtons();
+		algoText.setCurrentLineHighlightColor(YELLOW);
 		timerVisualization.stop();
+		autoButtons();
 	}
 	
 	private class BtnPlayActionListener implements ActionListener {
@@ -323,6 +348,7 @@ public class AlgorithmVisu extends JFrame {
 			if (mode != Mode.DEFAULT){
 				mode = Mode.PAUSE;
 				timerVisualization.stop();
+				algoText.setCurrentLineHighlightColor(YELLOW);
 			}
 			autoButtons();
 		}
@@ -360,6 +386,7 @@ public class AlgorithmVisu extends JFrame {
 	}
 	private class ThisWindowListener extends WindowAdapter {
 		public void windowClosing(WindowEvent arg0) {
+			timerVisualization.stop();
 			parent.setVisible(true);
 		}
 	}
@@ -372,5 +399,14 @@ public class AlgorithmVisu extends JFrame {
 			}
 		}
 	}
-	
+	private class AlgoTextMouseListener extends MouseAdapter {
+		@Override
+		public void mouseClicked(MouseEvent arg0) {
+			algoText.setCurrentLineHighlightColor(YELLOW);
+		}
+		@Override
+		public void mousePressed(MouseEvent e) {
+			algoText.setCurrentLineHighlightColor(YELLOW);
+		}
+	}
 }

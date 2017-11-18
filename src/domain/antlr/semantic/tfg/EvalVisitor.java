@@ -6,7 +6,6 @@ import java.util.Map;
 import java.util.Stack;
 
 import domain.antlr.gram.tfg.*;
-import domain.antlr.gram.tfg.tfgBaseVisitor;
 
 import org.antlr.v4.runtime.misc.ParseCancellationException;
 import org.antlr.v4.runtime.tree.*;
@@ -472,52 +471,66 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 	}
 	
 	public Value visitForClassicStatement(tfgParser.ForClassicStatementContext ctx) {
-		this.visit(ctx.leftAssignment).asInteger();
+		boolean condition;
+		this.visit(ctx.leftAssignment);
 		Value cond = this.visit(ctx.condition);
 		if (cond.isBoolean()){
-			boolean condition = cond.asBoolean();
+			condition = cond.asBoolean();
 			for (;condition;){
 				this.visit(ctx.exprFor);
-				/*This do the right assignment and reassign the loop condition*/
-				this.visit(ctx.rightAssignment);
-				cond = this.visit(ctx.condition);
-				if (!cond.isBoolean()){
-					errorHandler("The condition must be a boolean. Value: "+cond.getValClass(),ctx.start.getLine());
-				}
-				condition = cond.asBoolean();
+				condition =this.checkForCondition(ctx);
 			}
 		}else{
 			errorHandler("The condition must be a boolean. Value: "+cond.getValClass(),ctx.start.getLine());
 		}
-		return Value.VOID;
+		return cond;
 	}
-
+	protected boolean checkForCondition(tfgParser.ForClassicStatementContext ctx){
+		Value cond=Value.VOID;
+		/*This do the right assignment and reassign the loop condition*/
+		this.visit(ctx.rightAssignment);
+		cond = this.visit(ctx.condition);
+		if (!cond.isBoolean()){
+			errorHandler("The condition must be a boolean. Value: "+cond.getValClass(),ctx.start.getLine());
+		}
+		return cond.asBoolean();
+	}
 	/*While statement*/
 	public Value visitWhileStatement(tfgParser.WhileStatementContext ctx) {
-		Value condition = this.visit(ctx.condition);
-		if (condition.isBoolean()){
-			while (condition.asBoolean()){
+		boolean condition;
+		Value cond = this.visit(ctx.condition);
+		if (cond.isBoolean()){
+			condition=cond.asBoolean();
+			while (condition){
 				this.visit(ctx.exprWhile);
-				condition = this.visit(ctx.condition);
-				if (!condition.isBoolean()){
-					errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
-				}
+				condition=this.checkWhileCondition(ctx);
 			}
 		}else{
-			errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
+			errorHandler("The condition must be a boolean. Value: "+cond.getValClass(),ctx.start.getLine());
 		}
-		return Value.VOID;
+		return cond;
+	}
+	protected boolean checkWhileCondition(tfgParser.WhileStatementContext ctx){
+		Value cond = this.visit(ctx.condition);
+		if (!cond.isBoolean()){
+			errorHandler("The condition must be a boolean. Value: "+cond.getValClass(),ctx.start.getLine());
+		}
+		return cond.asBoolean();
 	}
 	
 	public Value visitDoWhileStatement(tfgParser.DoWhileStatementContext ctx) {
-		Value condition = null;
+		boolean conditon;
+		Value cond = this.visit(ctx.condition);
 		do{
 			this.visit(ctx.expr);
-			condition=this.visit(ctx.condition);
-			if (!condition.isBoolean())
-				errorHandler("The condition must be a boolean. Value: "+condition.getValClass(),ctx.start.getLine());
-		}while(condition.asBoolean());
-		
-		return condition;
+			conditon=this.checkDoWhileCondition(ctx);
+		}while(conditon);
+		return cond;
+	}
+	protected boolean checkDoWhileCondition(tfgParser.DoWhileStatementContext ctx){
+		Value cond = this.visit(ctx.condition);
+		if (!cond.isBoolean())
+			errorHandler("The condition must be a boolean. Value: "+cond.getValClass(),ctx.start.getLine());
+		return cond.asBoolean();
 	}
 }

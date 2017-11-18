@@ -14,19 +14,15 @@ import domain.antlr.semantic.ParserError;
 import domain.antlr.semantic.tfgGUI.EvalVisitorGUI;
 import domain.antlr.semantic.tfgGUI.State;
 
-
-
 public class ControllerParserTfgGUI implements ControllerParser{
-	private tfgLexer lexer;
-	private tfgParser parser;
 	private ParseTree tree;
 	private HandlerParserError errParserHandler;
 	private EvalVisitorGUI visitor;
 	public ControllerParserTfgGUI(String textFile){
-		this.lexer = new tfgLexer(CharStreams.fromString(textFile));
-		this.parser = new tfgParser(new CommonTokenStream(lexer));
+		tfgLexer lexer = new tfgLexer(CharStreams.fromString(textFile));
+		tfgParser parser = new tfgParser(new CommonTokenStream(lexer));
 		this.errParserHandler = new HandlerParserError();
-		this.parser.addErrorListener(errParserHandler);
+		parser.addErrorListener(errParserHandler);
 		this.tree = parser.start();
 	}
 	public ArrayList<ParserError> getErrors() {
@@ -36,7 +32,6 @@ public class ControllerParserTfgGUI implements ControllerParser{
 		this.visitor = new EvalVisitorGUI();
 		visitor.visit(this.tree);
 	}
-	
 	public ArrayList<State> getStatesTfgGUI(){
 		return visitor.getStates();
 	}

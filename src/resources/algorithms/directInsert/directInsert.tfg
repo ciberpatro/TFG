@@ -3,10 +3,10 @@ function sort(v)
 end
 
 function directInsert(v,s)
-	for (i=2; i<s; i+=1)
+	for (i=1; i<s; i+=1)
 		x = v[i]
 		j = i-1
-		while (x<=v[j])
+		while (j>=0 and x<=v[j])
 			v[j+1] = v[j]
 			j = j-1
 		end

@@ -1,13 +1,8 @@
 package domain.antlr.semantic.tfgGUI;
 
-import java.util.HashMap;
 import java.util.Map;
-import java.util.Map.Entry;
 
 import domain.antlr.semantic.tfg.Value;
-
-import java.util.Set;
-import java.util.Stack;
 
 public class State {
 	private int nline;
@@ -16,34 +11,14 @@ public class State {
 	private int type=StateConstants.DEFAULT;
 	private String sline;
 	private Map<String, Value> variables;
-	private Map<String, GraphTFG> graph_list;
+	private Map<String, ListGraph> graph_list;
 	
-	public State (int nline, int ntabs, String sline, Stack<Map<String, Value>> variables){
+	public State (int nline, int ntabs, String sline, Map<String, Value> variables, Map<String, ListGraph> graph_list){
 		this.nline=nline-1;
 		this.sline=sline;
 		this.ntabs=ntabs;
-		this.variables=new HashMap<String, Value>();
-		this.graph_list=new HashMap<String, GraphTFG>();
-		Map<String, Value> firstStack = variables.pop();
-		Map<String, Value> secondStack = null;
-		
-		if(!variables.isEmpty())
-			secondStack = variables.peek();
-		if(firstStack!=null){
-			Set<Entry<String, Value>> var = firstStack.entrySet();
-			for (Entry<String, Value> e : var ){
-				if (e.getValue().isList()){
-					this.graph_list.put(e.getKey(), new GraphTFG(e.getValue().asList()));
-				}else if (secondStack!=null&&
-				          secondStack.containsKey(e.getKey())&&
-				          secondStack.get(e.getKey())==e.getValue()){
-					this.variables.put(e.getKey(), e.getValue());
-				}else{
-					this.variables.put(e.getKey(), new Value(e.getValue()));
-				}
-			}
-			variables.push(firstStack);
-		}
+		this.variables=variables;
+		this.graph_list=graph_list;
 	}
 	
 	public void setColorBool(boolean colorBool){
@@ -73,7 +48,7 @@ public class State {
 	public Map<String, Value> getVariables() {
 		return this.variables;
 	}
-	public Map<String, GraphTFG> getGraphs(){
+	public Map<String, ListGraph> getListsState(){
 		return this.graph_list;
 	}
 	
@@ -81,11 +56,11 @@ public class State {
 		this.sline=sline;
 	}
 
-	public void updateGraph(String id, int index){
-		GraphTFG graph = null;
+	public void updateList(String id, int index){
+		ListGraph graph = null;
 		if (this.graph_list.get(id) != null){
 			graph = this.graph_list.get(id);
-			graph.setSelectColor(index);
+			graph.addSelectColor(index);
 		}
 	}
 	public String toString(){

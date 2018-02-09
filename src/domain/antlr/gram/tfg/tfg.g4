@@ -1,8 +1,8 @@
 grammar tfg;
 
-start : CRLF* expression_list;
+start : expression_list;
 
-expression_list : (expression (CRLF+ | EOF) )*;
+expression_list : CRLF* (expression (CRLF+ | EOF) )*;
  
 expression : function_definition # expression_function_definition
 			|if_statement # expression_if_statement
@@ -62,7 +62,7 @@ rvalue :
 	|array_definition	#rvalueArrayDefinition
 	|matrix=rvalue SQUAREBRACKETOPEN index=rvalue SQUAREBRACKETCLOSED	#rvalueArraySelection
 	|assignment #rvalueAssignment
-	|l=rvalue SQUAREBRACKETOPEN index=rvalue SQUAREBRACKETCLOSED operators newValue=rvalue #rvalueArrayIndexAssign
+	|l=rvalue SQUAREBRACKETOPEN index=rvalue SQUAREBRACKETCLOSED op=operators newValue=rvalue #rvalueArrayIndexAssign
 	|function_call	#rvalueFunction_call
 	|r=rvalue op=POW r1=rvalue	#rvalueOp0
 	|op=(PLUS | MINUS) r=rvalue #rvalueUnaryOp
@@ -76,8 +76,8 @@ rvalue :
 
 INTEGER : [0-9]+ ;
 FLOAT : [0-9]+'.'[0-9]+;
-STRING :   '"'( ESCAPEDQUOTE | ~('\n'|'\r') )*? '"' {setText(getText().substring(1, getText().length()-1));}
-		| '\''( ESCAPEDQUOTE | ~('\n'|'\r') )*? '\''{setText(getText().substring(1, getText().length()-1));};
+STRING :   '"'( ESCAPEDQUOTE | ~('\n'|'\r'|'"'|'\'') )*? '"' {setText(getText().substring(1, getText().length()-1));}
+		| '\''( ESCAPEDQUOTE | ~('\n'|'\r'|'"'|'\'') )*? '\''{setText(getText().substring(1, getText().length()-1));};
 BOOLEAN : 'true' | 'false';
 PRINT : 'print';
 SIZE : 'size';
@@ -88,7 +88,6 @@ RETURN : 'return';
 IF : 'if';
 ELSE : 'else';
 DO : 'do';
-ELSIF : 'elsif';
 WHILE : 'while';
 FOR : 'for';
 POW : '**';
@@ -118,6 +117,5 @@ SEMICOLON : ';';
 CRLF : '\n';
 COMMENTS : ('#' ~('\r' | '\n')* '\n' | '/*' .*? '*/') -> skip;
 ESCAPEDQUOTE : '\\"' 
-			 | '\\\''
-			 | '\\\\';
+			 | '\\\'';
 WHITE_SPACES : [ \t\r]+ -> skip;

@@ -67,13 +67,12 @@ public class Value {
 	}
 
 	public int hashCode() {
-
 		if(value == null) {
 			return 0;
 		}
-
 		return this.value.hashCode();
 	}
+	
 	public boolean equals(Object a) {
 		Value o = (Value) a;
 		boolean eq=false;

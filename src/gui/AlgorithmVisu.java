@@ -16,7 +16,7 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 
 import domain.Algorithm;
 import domain.ControllerParserTfgGUI;
-import domain.antlr.semantic.tfgGUI.GraphTFG;
+import domain.antlr.semantic.tfgGUI.ListGraph;
 import domain.antlr.semantic.ParserError;
 import domain.antlr.semantic.tfg.Value;
 import domain.antlr.semantic.tfgGUI.State;
@@ -40,6 +40,7 @@ import java.awt.event.ActionEvent;
 import java.awt.GridBagLayout;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
+
 import javax.swing.JSlider;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.ChangeListener;
@@ -111,6 +112,8 @@ public class AlgorithmVisu extends JFrame {
 		splitStackLine.setRightComponent(scrollLine);
 		
 		textAreaDebug = new JTextArea();
+		textAreaDebug.setEditable(false);
+		textAreaDebug.setTabSize(4);
 		scrollLine.setViewportView(textAreaDebug);
 		
 		scrollStack = new JScrollPane();
@@ -153,6 +156,7 @@ public class AlgorithmVisu extends JFrame {
 		
 		btnPause = new JButton("Pause");
 		panel_1.add(btnPause);
+		btnPause.setEnabled(false);
 		
 		btnForward = new JButton("Forward");
 		panel_1.add(btnForward);
@@ -188,19 +192,26 @@ public class AlgorithmVisu extends JFrame {
 		case Mode.PAUSE:
 			btnPlay.setEnabled(true);
 			btnBackward.setEnabled(true);
+			btnForward.setEnabled(true);
 			algoText.setEditable(false);
+			btnPause.setEnabled(false);
 			break;
 		case Mode.DEFAULT:
+			btnPause.setEnabled(false);
 			btnPlay.setEnabled(true);
 			algoText.setEnabled(true);
 			btnBackward.setEnabled(false);
+			btnForward.setEnabled(true);
 			algoText.setEditable(true);
 			break;
 		case Mode.PLAY:
 			btnPlay.setEnabled(false);
+			btnPause.setEnabled(true);
 			algoText.setEnabled(false);
-			btnBackward.setEnabled(true);
+			btnBackward.setEnabled(false);
+			btnForward.setEnabled(false);
 			algoText.setEditable(false);
+			break;
 		case Mode.STEP_BACKWARD:
 		case Mode.STEP_FORWARD:
 			algoText.setEnabled(false);
@@ -227,7 +238,6 @@ public class AlgorithmVisu extends JFrame {
 				showSemanticError(err);
 				states = stateListAux.listIterator();
 			}
-			
 		}
 	}
 	
@@ -251,11 +261,11 @@ public class AlgorithmVisu extends JFrame {
 	
 	public void stackVisualization(State s){
 		Set<Entry<String, Value>> stack = s.getVariables().entrySet();
-		Set<Entry<String, GraphTFG>> graph_list = s.getGraphs().entrySet();
+		Set<Entry<String, ListGraph>> graph_list = s.getListsState().entrySet();
 		StackLayout stackLayout = new StackLayout(stack.size()+graph_list.size());
 		pnlStack.removeAll();
 		pnlStack.setLayout(stackLayout);
-		for (Entry<String, GraphTFG> e: graph_list){
+		for (Entry<String, ListGraph> e: graph_list){
 			Component graphComp = new GraphGUI(e.getValue());
 			graphComp.setEnabled(false);
 			pnlStack.addRow(new JLabel(e.getKey() +": "), graphComp);
@@ -291,6 +301,8 @@ public class AlgorithmVisu extends JFrame {
 							s.getSline(),
 							"The exectuion has finished",
 							JOptionPane.INFORMATION_MESSAGE);
+					mode=Mode.DEFAULT;
+					autoButtons();
 				}
 			}
 		} catch (BadLocationException e1) {
@@ -306,16 +318,15 @@ public class AlgorithmVisu extends JFrame {
 	}
 	
 	private void endVisualization(){
-		mode = Mode.DEFAULT;
 		algoText.setCurrentLineHighlightColor(YELLOW);
 		timerVisualization.stop();
+		mode = Mode.DEFAULT;
 		autoButtons();
 	}
 	
 	private class BtnPlayActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent arg0) {
 			parseAlgorithm();
-			mode = Mode.PLAY;
 			timerVisualization.start();
 			autoButtons();
 		}
@@ -359,11 +370,14 @@ public class AlgorithmVisu extends JFrame {
 			
 			if (states!=null&&states.hasPrevious()){
 				s = states.previous();
-				if (states.hasPrevious() && mode == Mode.STEP_FORWARD)
-					s = states.previous();
-				mode = Mode.STEP_BACKWARD;
-				autoButtons();
-				autoLine(s);
+				if (states.hasPrevious()){
+					if (mode == Mode.STEP_FORWARD||mode == Mode.PAUSE)
+						s = states.previous();
+					mode = Mode.STEP_BACKWARD;
+					autoButtons();
+					autoLine(s);
+				}else 
+					endVisualization();
 			}else{
 				endVisualization();
 			}
@@ -373,15 +387,16 @@ public class AlgorithmVisu extends JFrame {
 	private class BtnPlayTimerActionListener implements ActionListener {
 		public void actionPerformed(ActionEvent e) {
 			State s = null;
-			mode = Mode.PLAY;
-			autoButtons();
 			if (states!=null&&states.hasNext()) {
 				s = states.next();
+				if (states.hasNext()&&mode == Mode.STEP_BACKWARD)
+					s = states.next();
+				mode = Mode.PLAY;
+				autoButtons();
 				autoLine(s);
 			} else {
 				endVisualization();
 			}
-		
 		}
 	}
 	private class ThisWindowListener extends WindowAdapter {

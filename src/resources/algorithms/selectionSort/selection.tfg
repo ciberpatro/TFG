@@ -1,0 +1,21 @@
+function sort(v)
+	selectionSort(v,size(v)-1)
+end
+
+function selectionSort(v,s)
+	for (i=0; i<s; i+=1)
+		min = i
+		for (j=i+1; j<=s; j+=1)
+			if (v[j] < v[min])
+				min = j
+			end
+		end
+		aux=v[i]
+		v[i]=v[min]
+		v[min]=aux
+	end
+end
+
+list=[3,4,5,2,6,1,5]
+
+sort(list)

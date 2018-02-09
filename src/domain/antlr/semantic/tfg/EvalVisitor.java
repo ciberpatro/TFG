@@ -31,11 +31,15 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 		String op = ctx.op.getText();
 		Value rvalue = this.visit(ctx.rvalue());
 		Map<String, Value> variables = variableStack.peek();
-		if (variables.containsKey(id)){
-			if (!op.equals("="))
-				rvalue=doOperations(variables.get(id), rvalue, op.split("=")[0], ctx.start.getLine());
+		if (rvalue!=Value.VOID){
+			if (variables.containsKey(id)){
+				if (!op.equals("="))
+					rvalue=doOperations(variables.get(id), rvalue, op.split("=")[0], ctx.start.getLine());
+			}
+			variables.put(id, rvalue);
+		}else{
+			errorHandler("The function returned void value to an assignment",ctx.start.getLine());
 		}
-		variables.put(id, rvalue);
 		return rvalue;
 	}
 	/*Lvalue*/
@@ -118,12 +122,17 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 	public Value visitRvalueUnaryOp(tfgParser.RvalueUnaryOpContext ctx) {
 		Value r = this.visit(ctx.r);
 		String op = ctx.op.getText();
+		
 		if (r.isNumber()){
+			int aux=1;
+			if (op.equals("-")){
+				aux=-1;
+			}
 			if (r.isInteger()){
 				/*TODO error with r sign and op sign at parsing*/
-				r=new Value(Integer.valueOf(op+r.asInteger()));
+				r=new Value(aux*r.asInteger());
 			}else{
-				r=new Value(Double.valueOf(op+r.asDouble()));
+				r=new Value(aux*r.asDouble());
 			}
 		}else{
 			errorHandler("The value: "+r.getValClass()+" is not a number.", ctx.start.getLine());
@@ -150,21 +159,30 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 
 	public Value visitRvalueBoolean1(tfgParser.RvalueBoolean1Context ctx) {
 	   	Value r = this.visit(ctx.r);
-		Value r1 =this.visit(ctx.r1);
+		Value r1 =null;
 		String op=ctx.op.getText();
 		Boolean result=false;
-		if (r.isBoolean()&&r1.isBoolean()){
+		if (r.isBoolean()){
+			result=r.asBoolean();
 			switch (op){
 				case "and":
 				case "&&":
-					result=r.asBoolean()&&r1.asBoolean();
-				break;
+				if (result) r1=this.visit(ctx.r1);
+			break;
 				case "or":
 				case "||":
-					result=r.asBoolean()||r1.asBoolean();
-				break;
+				if (!result) r1=this.visit(ctx.r1);
+			break;
+			}
+			if (r1!=null){
+				if (r1.isBoolean())
+					result=r1.asBoolean();
+				else
+					errorHandler("The value: " + r1.getValClass() +
+							" is not boolean", ctx.start.getLine());
 			}
 		}else{
+			r1=this.visit(ctx.r1);
 			if (r.isBoolean()^r1.isBoolean()){
 				errorHandler("The value: " + (r.isBoolean()? r1.getValClass() : r.getValClass())+
 							" is not boolean", ctx.start.getLine());
@@ -355,34 +373,55 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 
 	public Value visitRvalueArraySelection(tfgParser.RvalueArraySelectionContext ctx) {
 		ArrayList<Value> matrix = null;
-		
 		int index = -1;
 		Value vmatrix=this.visit(ctx.matrix);
 		Value vindex=this.visit(ctx.index);
 		Value vfinal=Value.VOID;
+		
 		if (vmatrix.isList() && vindex.isInteger()){
 			matrix=vmatrix.asList();
 			index=vindex.asInteger();
-			
-			if (index<matrix.size()&&index>=0)
+			if (index<matrix.size()&&index>=0){
 				vfinal=matrix.get(index);
-			else {
+			}else{
 				errorHandler(String.format("Index Error.\n"
 						+ "Index: %d\n"
 						+ "Matrix: %s Size: %d",
 						index, matrix, matrix.size()), ctx.start.getLine());
 			}
-		}else
-			errorHandler("The value "+ vmatrix.getValClass() +" is not iterable",ctx.start.getLine());
+		}else{
+			if (vindex.isList())
+				errorHandler("The value "+ vmatrix.getValClass() +" is not iterable",ctx.start.getLine());
+			else
+				errorHandler("The index "+ index + " must be a Integer",ctx.start.getLine());
+		}
 		return vfinal; 
 	}
 	
 	public Value visitRvalueArrayIndexAssign(tfgParser.RvalueArrayIndexAssignContext ctx) {
+		int index=-1;
 		Value val = this.visit(ctx.l);
-		int index = this.visit(ctx.index).asInteger();
-		val.asList().set(index,this.visit(ctx.newValue));
-		/*TODO ADD MORE OPERATORS (at the moment only =)*/
-		return val;
+		Value r = null;
+		Value vIndex=this.visit(ctx.index);
+		if (vIndex.isInteger()){
+			index=vIndex.asInteger();
+			r = this.visit(ctx.newValue);
+			if (val.isList()){
+				if (index<val.asList().size()&&index>=0){
+					if (!ctx.op.getText().equals("="))
+						r=doOperations(r, val.asList().get(index), ctx.op.getText().split("=")[0], ctx.start.getLine());
+					val.asList().set(index,r);
+				}else{
+					errorHandler(String.format("Index Error.\n"
+							+ "Index: %d\n"
+							+ "Matrix: %s Size: %d",
+							index, val.asList(), val.asList().size()), ctx.start.getLine());
+				}
+			}else
+				errorHandler("The value "+ val.getValClass() +" is not iterable",ctx.start.getLine());
+		}else
+			errorHandler("The index "+ index + " must be a Integer",ctx.start.getLine());
+		return r;
 	}
 	
 	/*Llamada Funcion*/
@@ -520,11 +559,13 @@ public class EvalVisitor extends tfgBaseVisitor<Value> {
 	
 	public Value visitDoWhileStatement(tfgParser.DoWhileStatementContext ctx) {
 		boolean conditon;
+		this.visit(ctx.expr);
 		Value cond = this.visit(ctx.condition);
-		do{
+		conditon=this.checkDoWhileCondition(ctx);
+		while(conditon){
 			this.visit(ctx.expr);
 			conditon=this.checkDoWhileCondition(ctx);
-		}while(conditon);
+		}
 		return cond;
 	}
 	protected boolean checkDoWhileCondition(tfgParser.DoWhileStatementContext ctx){

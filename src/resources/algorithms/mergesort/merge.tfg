@@ -7,11 +7,11 @@ function mergesort(v, li, ls)
 		med = (li+ls)/2
 		mergesort(v,li,med)
 		mergesort(v,med+1,ls)
-		mezcla(v,li,med,ls)
+		merge(v,li,med,ls)
 	end
 end
 
-function mezcla(v,li,med,ls)
+function merge(v,li,med,ls)
 	rec = li
 	rec1 = li
 	rec2 = med+1
